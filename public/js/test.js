@@ -18,7 +18,7 @@ const Test = {
             build: () => {
                 return {
                     was_run: was_run,
-                    //name: name,
+                    name: name,
                     test_method: test_method
                 };
             }
