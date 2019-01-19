@@ -1,18 +1,25 @@
 const Test = {
     builder: () => {
         let was_run = false;
+        let name = "";
         let test_method = () => {};
 
         let test_builder = {
+            name: (test_name) => {
+                name = test_name;
+                return test_builder;
+            },
+
             test: (method) => {
                 test_method = method;
-                return test_struct;
+                return test_builder;
             },
 
             build: () => {
                 return {
                     was_run: was_run,
-                    test_method:test_method
+                    //name: name,
+                    test_method: test_method
                 };
             }
         };
@@ -35,10 +42,17 @@ const Test = {
     }
 };
 
-let test = Test.builder()
+var successful_test = Test.builder()
+.name("Successful Test")
 .test(() => {
-    Test.assert(true);
+    let success = Test.builder()
+    .name("Successful Test")
+    .test(() => {})
+    .build();
+    Test.assert(success.name === "Successful Test", "Incorrect/missing name");
+    Test.assert(!success.was_run);
+    let result = Test.run(success);
+    Test.assert(result.was_run);
 }).build();
-console.log(test.was_run);
-let result = Test.run(test);
-console.log(test.was_run);
+
+Test.run(successful_test);
