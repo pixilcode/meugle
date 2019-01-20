@@ -2,6 +2,7 @@ const Test = {
     builder: () => {
         let name = "";
         let test_method = () => {};
+        let ignore = false;
 
         let test_builder = {
             name: (test_name) => {
@@ -13,6 +14,11 @@ const Test = {
                 return test_builder;
             },
 
+            ignore: () => {
+                ignore = true;
+                return test_builder;
+            },
+
             test: (method) => {
                 test_method = method;
                 return test_builder;
@@ -21,6 +27,7 @@ const Test = {
             build: () => {
                 return {
                     name: name,
+                    ignore: ignore,
                     test_method: test_method
                 };
             }
@@ -42,7 +49,8 @@ const Test = {
 const TestSuite = {
     builder: () => {
         let name = "";
-        let test_methods = [];
+        let show_ignored = false;
+        let tests = [];
 
         let suite_builder = {
             name: (suite_name) => {
@@ -54,15 +62,21 @@ const TestSuite = {
                 return suite_builder;
             },
 
+            show_ignored: (show) => {
+                show_ignored = show;
+                return suite_builder;
+            },
+
             add_test: (test) => {
-                test_methods.push(test.build());
+                tests.push(test.build());
                 return suite_builder;
             },
 
             build: () => {
                 return {
                     name: name,
-                    test_methods: test_methods
+                    show_ignored: show_ignored,
+                    tests: tests
                 }
             }
         };
@@ -71,7 +85,8 @@ const TestSuite = {
     },
 
     run: (test_suite) => {
-        let results = test_suite.test_methods.map((test) => Test.run(test));
+        let ignored = test_suite.tests.filter((test) => test.ignore);
+        let results = test_suite.tests.filter((test) => !test.ignore).map((test) => Test.run(test));
         let is_success = false;
 
         if(results.every((result) => result.is_success))
@@ -80,9 +95,17 @@ const TestSuite = {
         let tests_run = results.length;
         let tests_failed = results.filter((result) => !result.is_success).length;
 
-        let summary = "[" + test_suite.name + "] " + tests_run + " run, " + tests_failed + " failed";
-        
+        let summary = tests_run + " run, " + tests_failed + " failed";
+        if(test_suite.name !== "")
+            summary = "[" + test_suite.name + "] " + summary;
+        if(ignored.length > 0) {
+            summary += ", " + ignored.length + " ignored";
+        }
+
         let message = tests_run + " run, " + tests_failed + " failed";
+        if(ignored.length > 0) {
+            message += ", " + ignored.length + " ignored";
+        }
 
         let successes = results.filter((result) => result.is_success);
         let failures = results.filter((result) => !result.is_success);
@@ -96,8 +119,15 @@ const TestSuite = {
         
         if(failures.length > 0) {
             message += "\n\tFailures";
-            message = failures.reduce((aggregate, result) =>
+            message = failures.reduce((message, result) =>
                     message + "\n\t\t" + result.result_message,
+                message);
+        }
+
+        if(ignored.length > 0 && test_suite.show_ignored) {
+            message += "\n\tIgnored";
+            message = ignored.reduce((message, test) =>
+                    message + "\n\t\t" + "[" + test.name + "] Ignored",
                 message);
         }
 
@@ -156,46 +186,58 @@ try {
 // Tests
 let suite = TestSuite.builder()
 .name("Testing Framework Tests")
+
 .description("Test each element of the testing framework")
+
 .add_test(Test.builder()
     .name("Successful Test")
+
     .description(
         "Test that the testing framework acts correctly " +
         "when a test is successful")
+
     .test(() => {
         let success = Test.builder()
         .name("Success Test")
         .test(() => {})
         .build();
 
-        Test.assert_neq(undefined, success.name, "Missing name");
-        Test.assert_eq("Success Test", success.name, "Incorrect name: " + success.name);
+        assert_neq(undefined, success.name, "Missing name");
+        assert_eq("Success Test", success.name, "Incorrect name: " + success.name);
 
         let result = Test.run(success);
 
-        Test.assert(result.is_success);
-        Test.assert_eq("[Success Test] Success!", result.result_message);
+        assert(result.is_success);
+        assert_eq("[Success Test] Success!", result.result_message);
     }))
+
+
 .add_test(Test.builder()
     .name("Failing Test")
+
     .description(
         "Test that the testing framework acts correctly " +
         "when a test is unsuccessful")
+
     .test(() => {
         let fail = Test.builder()
         .name("Fail Test")
-        .test(() => Test.assert(false))
+        .test(() => assert(false))
         .build();
 
         let result = Test.run(fail);
 
-        Test.assert(!result.is_success);
-        Test.assert_eq("[Fail Test] Assertion failed", result.result_message);
+        assert(!result.is_success);
+        assert_eq("[Fail Test] Assertion failed", result.result_message);
     }))
+
+
 .add_test(Test.builder()
     .name("Test Suite Test")
+
     .description(
         "Test that the test suite works correctly")
+
     .test(() => {
         let suite = TestSuite.builder()
         .name("Test Test Suite")
@@ -204,19 +246,52 @@ let suite = TestSuite.builder()
             .test(() => {}))
         .add_test(Test.builder()
             .name("Fail Test")
-            .test(() => Test.assert(false)))
+            .test(() => assert(false)))
         .build();
 
         let result = TestSuite.run(suite);
 
-        Test.assert(!result.is_success);
-        Test.assert_eq("[Test Test Suite] 2 run, 1 failed", result.summary);
-        Test.assert_eq(
+        assert(!result.is_success);
+        assert_eq("[Test Test Suite] 2 run, 1 failed", result.summary);
+        assert_eq(
             "[Test Test Suite] 2 run, 1 failed" +
             "\n\tSuccesses" +
             "\n\t\t[Success Test] Success!" +
             "\n\tFailures" +
             "\n\t\t[Fail Test] Assertion failed",
+            result.result_message
+        );
+    }))
+
+
+.add_test(Test.builder()
+    .name("Ignoring Tests Test")
+
+    .description(
+        "Tests to ensure that tests are ignored")
+
+    .test(() => {
+        let suite = TestSuite.builder()
+        .add_test(Test.builder()
+            .name("Ignored Test")
+            .ignore()
+            .test(() => {}));
+        
+        let result = TestSuite.run(suite.build());
+
+            assert_eq("0 run, 0 failed, 1 ignored", result.summary);
+            assert_eq(
+                "0 run, 0 failed, 1 ignored",
+                result.result_message
+            )
+        
+        result = TestSuite.run(suite.show_ignored(true).build());
+
+        assert_eq("0 run, 0 failed, 1 ignored", result.summary);
+        assert_eq(
+            "0 run, 0 failed, 1 ignored" +
+            "\n\tIgnored" +
+            "\n\t\t[Ignored Test] Ignored",
             result.result_message
         )
     }))
