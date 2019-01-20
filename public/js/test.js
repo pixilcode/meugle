@@ -296,4 +296,5 @@ let suite = TestSuite.builder()
         )
     }))
 .build();
+
 TestSuite.run(suite).print_result();
