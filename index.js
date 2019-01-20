@@ -2,6 +2,14 @@ const express = require("express");
 const json_parser = require("body-parser");
 const path = require("path");
 
+// Testing framework
+const test = require("./public/js/test");
+const Test = test.Test;
+const TestSuite = test.TestSuite;
+const assert = test.assert;
+const assert_eq = test.assert_eq;
+const assert_neq = test.assert_neq;
+
 const app = express();
 const port = 8080;
 app.listen(port, () => console.log("Listening on port 8080..."));
