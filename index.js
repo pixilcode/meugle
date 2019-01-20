@@ -4,11 +4,14 @@ const path = require("path");
 
 // Testing framework
 const test = require("./public/js/test");
+test.run_tests() // Ensure that all tests pass
 const Test = test.Test;
 const TestSuite = test.TestSuite;
 const assert = test.assert;
 const assert_eq = test.assert_eq;
 const assert_neq = test.assert_neq;
+
+// TODO Make tests in separate file for server
 
 const app = express();
 const port = 8080;
