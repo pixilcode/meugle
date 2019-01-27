@@ -136,7 +136,7 @@ const TestSuite = {
 }
 
 function assert(statement, message = "") {
-    if(statement === false)
+    if(!statement)
         if(message === "")
             throw "Assertion failed";
         else
@@ -301,3 +301,5 @@ try {
     module.exports.assert_neq = exports.assert_neq = assert_neq;
     module.exports.run_tests = exports.run_tests = run_tests;
 } catch(error) {}
+
+var EXPORTED_SYMBOLS = ["Test", "TestSuite", "assert", "assert_eq", "assert_neq", "run_tests"];
