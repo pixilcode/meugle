@@ -1,19 +1,19 @@
-function validate(username, password, server) {
+function validate(username, password, database) {
+    let success = database.has_user(username) && database.match(username, password);
+    let session_id = "";
+    // if(success) session_id = database.generate_session_id(username); // Needs testing
     return {
-        user_exists: server.has_user(username),
-        succesful: server.has_user(username) && server.match(username, password)
+        succesful: success,
+        session_id: session_id
     };
 }
 
 function run_tests() {
     const test = require("./test");
-    const crypto = require("crypto");
 
     let Test = test.Test;
     let TestSuite = test.TestSuite;
     let assert = test.assert;
-    let assert_eq = test.assert_eq;
-    let assert_neq = test.assert_neq;
 
     let suite = TestSuite.builder()
     .name("Backend Tests")
@@ -36,23 +36,20 @@ function run_tests() {
 
             let result = validate(username, password, server);
 
-            assert(result.user_exists, "'john_doe' does not exist");
-            assert(result.succesful, "'p@$$w0rd' was not successful");
+            assert(result.succesful, "'john_doe' or 'p@$$w0rd' was not successful");
 
             password = "n0tp@$$w0rd";
 
             result = validate(username, password, server);
 
-            assert(result.user_exists, "'john_doe' does not exist");
-            assert(!result.succesful, "Incorrect password was successful");
+            assert(!result.succesful, "Incorrect username and password was successful");
 
             username = "not_in_server";
             password = "p@$$w0rd";
 
             result = validate(username, password, server);
 
-            assert(!result.user_exists, "'not_in_server' exists on the server");
-            assert(!result.succesful, "Given username doesn't exist");
+            assert(!result.succesful, "Given username or password doesn't exist");
         }))
     
     .build();
@@ -60,12 +57,6 @@ function run_tests() {
     TestSuite.run(suite).print_result();
 
     function get_mock_server() {
-        
-        let hash = crypto.createHash("md5");
-        hash.write("p@$$w0rd");
-        hash.end();
-        let password_hash = hash.read().toString("hex");
-
         let server = {
             has_user: (username) => {
                 return username === "john_doe";
@@ -76,13 +67,9 @@ function run_tests() {
                     && password === "p@$$w0rd";
             },
 
-            data: [{
-                username: "john_doe",
-                password: password_hash,
-                salt: "s@1ty s@1t",
-                verb_practice: [],
-                custom_sets: []
-            }]
+            generate_session_id: () => {
+                return "session id";
+            }
         };
 
         return server;
@@ -91,6 +78,5 @@ function run_tests() {
 
 try {
     module.exports.run_tests = exports.run_tests = run_tests;
+    module.exports.validate = exports.validate = validate;
 } catch(error) {}
-
-run_tests();

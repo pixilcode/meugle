@@ -170,7 +170,7 @@ function test_result(is_success, test_name, message, summary) {
         is_success: is_success,
         result_message: result_message,
         summary: summary,
-        print_result: () => console.log(result_message)
+        print_result: () => console.log(result_message + "\n")
     }
 }
 
