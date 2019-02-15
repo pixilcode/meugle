@@ -28,6 +28,8 @@ class UserDB {
             verb_practice: [],
             custom_sets: []
         });
+
+        return this;
     }
 
     save() {
@@ -143,7 +145,7 @@ function run_tests() {
         
         .test(() => {
             let normal = new UserDB(normal_loc);
-            normal.add_user("james_doe", "mynameisjames");
+            normal = normal.add_user("james_doe", "mynameisjames");
             assert(normal.match("james_doe", "mynameisjames"));
         }))
     
