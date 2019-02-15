@@ -1,4 +1,4 @@
-function validate(username, password, database) {
+function validate_login(username, password, database) {
     let success = database.has_user(username) && database.match(username, password);
     let session_id = "";
     // if(success) session_id = database.generate_session_id(username); // Needs testing
@@ -34,20 +34,20 @@ function run_tests() {
             let password = "p@$$w0rd";
             let server = get_mock_server();
 
-            let result = validate(username, password, server);
+            let result = validate_login(username, password, server);
 
             assert(result.succesful, "'john_doe' or 'p@$$w0rd' was not successful");
 
             password = "n0tp@$$w0rd";
 
-            result = validate(username, password, server);
+            result = validate_login(username, password, server);
 
             assert(!result.succesful, "Incorrect username and password was successful");
 
             username = "not_in_server";
             password = "p@$$w0rd";
 
-            result = validate(username, password, server);
+            result = validate_login(username, password, server);
 
             assert(!result.succesful, "Given username or password doesn't exist");
         }))
