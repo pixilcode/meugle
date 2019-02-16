@@ -32,38 +32,40 @@ class UserDB {
         return this;
     }
 
+    is_logged_in(username) {
+        return this.logged_in.find((user) => user.username == username) !== undefined;
+    }
+
+    login(username, password) {
+        if(this.match(username, password) && !this.is_logged_in(username)) {
+                let user_id = crypto.randomBytes(16).toString("hex");
+                this.logged_in.push({
+                    username: username,
+                    user_id: user_id
+                });
+        }
+
+        return this;
+    }
+
+    get_user_id(username) {
+        let user = this.logged_in.find((user) => user.username == username);
+        if(user) return user.user_id;
+        else return undefined;
+    }
+
+    logout(username) {
+        this.logged_in = this.logged_in.filter((user) => user.username !== username);
+        return this;
+    }
+
     save() {
         fs.writeFileSync(location);
     }
 }
 
 function user_db(loc) {
-    const users = fs.readJSONSync(loc);
-    const logged_in = [];
-
-    {
-        // generate_session_id: (username) => {
-        //     let id = logged_in
-        //         .filter((user) => user.username === username)
-        //         .map((user) => user.session_id).pop();
-            
-        //     if(id) return id;
-        //     else {
-        //         do {
-        //             let hash = crypto.createHash("sha256");
-        //             hash.update(Math.random().toString());
-
-        //             id = hash.digest("hex");
-        //         } while(logged_in
-        //             .filter((user) => user.session_id === id)
-        //             .length > 0);
-        //         logged_in.push({username: username, session_id: id});
-        //         return id;
-        //     }
-        // }
-    };
-
-    throw "'user_db' is deprecated";
+    throw "'user_db' is deprecated"; // Just in case anything is still using it
 }
 
 function hash_password(password, salt) {
@@ -78,7 +80,7 @@ function generate_salt() {
 }
 
 function run_tests() {
-    const test = require("./test");
+    const test = require("../test/test");
     const path = require("path");
     const os = require("os");
 
@@ -86,6 +88,7 @@ function run_tests() {
     let TestSuite = test.TestSuite;
     let assert = test.assert;
     let assert_eq = test.assert_eq;
+    let assert_neq = test.assert_neq;
 
     let temp_dir = fs.mkdtempSync(path.join(os.tmpdir(), "db-"));
 
@@ -117,6 +120,7 @@ function run_tests() {
         
         .test(() => {
             let normal = new UserDB(normal_loc);
+            
             assert(normal.has_user("user_1"), "Database does not have 'user_1'");
             assert(!normal.has_user("user_2"), "Database has 'user_2'");
         }))
@@ -131,6 +135,7 @@ function run_tests() {
         
         .test(() => {
             let normal = new UserDB(normal_loc);
+            
             assert(normal.match("user_1", "p@$$w0rd"), "Password did not match username");
             assert(!normal.match("user_1", "password"), "Password matched username");
         }))
@@ -145,8 +150,36 @@ function run_tests() {
         
         .test(() => {
             let normal = new UserDB(normal_loc);
+            
+            assert(!normal.has_user("james_doe"), "User DB shouldn't have 'james_doe'");
+            
             normal = normal.add_user("james_doe", "mynameisjames");
-            assert(normal.match("james_doe", "mynameisjames"));
+            
+            assert(normal.match("james_doe", "mynameisjames"), "User DB does not have correct info");
+        }))
+    
+    .add_test(Test.builder()
+        .name("Login Test")
+        
+        .description(
+            "Ensure that the login system " +
+            "works correctly"
+        )
+        
+        .test(() => {
+            let normal = new UserDB(normal_loc);
+            
+            assert(!normal.is_logged_in("user_1"), "User 1 should not be logged in");
+
+            normal = normal.login("user_1", "p@$$w0rd");
+
+            assert(normal.is_logged_in("user_1"));
+            assert_neq(normal.get_user_id("user_1"), undefined);
+
+            normal = normal.logout("user_1");
+
+            assert(!normal.is_logged_in("user_1"));
+            assert_eq(normal.get_user_id("user_1"), undefined);
         }))
     
     .build();
