@@ -64,10 +64,6 @@ class UserDB {
     }
 }
 
-function user_db(loc) {
-    throw "'user_db' is deprecated"; // Just in case anything is still using it
-}
-
 function hash_password(password, salt) {
     let hashed_password = crypto.createHash("md5");
     hashed_password.update(salt + "" + password);
@@ -193,6 +189,5 @@ function run_tests() {
 try {
     module.exports.run_tests = exports.run_tests = run_tests;
     module.UserDB = exports.UserDB = UserDB;
-    module.user_db = exports.user_db = user_db;
     module.generate_salt = exports.generate_salt = generate_salt;
 } catch(error) {}
