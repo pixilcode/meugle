@@ -80,11 +80,11 @@ function run_tests() {
     const path = require("path");
     const os = require("os");
 
-    let Test = test.Test;
-    let TestSuite = test.TestSuite;
-    let assert = test.assert;
-    let assert_eq = test.assert_eq;
-    let assert_neq = test.assert_neq;
+    const Test = test.Test;
+    const TestSuite = test.TestSuite;
+    const assert = test.assert;
+    const assert_eq = test.assert_eq;
+    const assert_neq = test.assert_neq;
 
     let temp_dir = fs.mkdtempSync(path.join(os.tmpdir(), "db-"));
 
