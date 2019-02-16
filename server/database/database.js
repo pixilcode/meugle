@@ -33,7 +33,7 @@ class UserDB {
     }
 
     is_logged_in(username) {
-        return this.logged_in.find((user) => user.username == username) !== undefined;
+        return this.logged_in.find((user) => user.username === username) !== undefined;
     }
 
     login(username, password) {
@@ -49,7 +49,7 @@ class UserDB {
     }
 
     get_user_id(username) {
-        let user = this.logged_in.find((user) => user.username == username);
+        let user = this.logged_in.find((user) => user.username === username);
         if(user) return user.user_id;
         else return undefined;
     }
