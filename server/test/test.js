@@ -1,90 +1,61 @@
-const Test = {
-    builder: () => {
-        let name = "";
-        let test_method = () => {};
-        let ignore = false;
+class Test {
+    static builder() {
+        return new TestBuilder();
+    }
 
-        let test_builder = {
-            name: (test_name) => {
-                name = test_name;
-                return test_builder;
-            },
-
-            description: (description) => {
-                return test_builder;
-            },
-
-            ignore: () => {
-                ignore = true;
-                return test_builder;
-            },
-
-            test: (method) => {
-                test_method = method;
-                return test_builder;
-            },
-
-            build: () => {
-                return {
-                    name: name,
-                    ignore: ignore,
-                    test_method: test_method
-                };
-            }
-        };
-
-        return test_builder;
-    },
-
-    run: (test) => {
+    static run(test) {
         try {
             test.test_method();
-            return test_result(true, test.name, "Success!", test.name + ": 1 run, 0 failed");
+            return new Result(true, test.name, "Success!", test.name + ": 1 run, 0 failed");
         } catch(error) {
-            return test_result(false, test.name, error, test.name + ": 1 run, 1 failed");
+            return new Result(false, test.name, error, test.name + ": 1 run, 1 failed");
         }
     }
-};
 
-const TestSuite = {
-    builder: () => {
-        let name = "";
-        let show_ignored = false;
-        let tests = [];
+    constructor(name, ignore, test_method) {
+        this.name = name;
+        this.ignore = ignore;
+        this.test_method = test_method;
+    }
+}
 
-        let suite_builder = {
-            name: (suite_name) => {
-                name = suite_name;
-                return suite_builder;
-            },
+class TestBuilder {
+    constructor() {
+        this.test_name = "";
+        this.test_method = () => {};
+        this.ignore_test = false;
+    }
 
-            description: (description) => {
-                return suite_builder;
-            },
+    name(test_name) {
+        this.test_name = test_name;
+        return this;
+    }
 
-            show_ignored: (show) => {
-                show_ignored = show;
-                return suite_builder;
-            },
+    description(description) {
+        return this;
+    }
 
-            add_test: (test) => {
-                tests.push(test.build());
-                return suite_builder;
-            },
+    ignore() {
+        this.ignore_test = true;
+        return this;
+    }
 
-            build: () => {
-                return {
-                    name: name,
-                    show_ignored: show_ignored,
-                    tests: tests
-                }
-            }
-        };
+    test(method) {
+        this.test_method = method;
+        return this;
+    }
 
-        return suite_builder;
-    },
+    build() {
+        return new Test(this.test_name, this.ignore_test, this.test_method);
+    }
+}
 
-    run: (test_suite) => {
+class TestSuite {
+    static builder() {
+        return new TestSuiteBuilder();
+    }
+
+    static run(test_suite) {
         let ignored = test_suite.tests.filter((test) => test.ignore);
         let results = test_suite.tests.filter((test) => !test.ignore).map((test) => Test.run(test));
         let is_success = false;
@@ -98,14 +69,12 @@ const TestSuite = {
         let summary = tests_run + " run, " + tests_failed + " failed";
         if(test_suite.name !== "")
             summary = "[" + test_suite.name + "] " + summary;
-        if(ignored.length > 0) {
+        if(ignored.length > 0)
             summary += ", " + ignored.length + " ignored";
-        }
 
         let message = tests_run + " run, " + tests_failed + " failed";
-        if(ignored.length > 0) {
+        if(ignored.length > 0)
             message += ", " + ignored.length + " ignored";
-        }
 
         let successes = results.filter((result) => result.is_success);
         let failures = results.filter((result) => !result.is_success);
@@ -131,7 +100,61 @@ const TestSuite = {
                 message);
         }
 
-        return test_result(is_success, test_suite.name, message, summary)
+        return new Result(is_success, test_suite.name, message, summary);
+    }
+
+    constructor(name, show_ignored, tests) {
+        this.name = name;
+        this.show_ignored = show_ignored;
+        this.tests = tests;
+    }
+}
+
+class TestSuiteBuilder {
+    constructor() {
+        this.suite_name = "";
+        this.show_ignored_tests = false;
+        this.tests = [];
+    }
+
+    name(suite_name) {
+        this.suite_name = suite_name;
+        return this;
+    }
+
+    description(description) {
+        return this;
+    }
+
+    show_ignored(show) {
+        this.show_ignored_tests = show;
+        return this;
+    }
+
+    add_test(test) {
+        this.tests.push(test.build());
+        return this;
+    }
+
+    build() {
+        return new TestSuite(this.suite_name, this.show_ignored_tests, this.tests);
+    }
+}
+
+class Result {
+    constructor(is_success, test_name, message, summary) {
+        let result_message = message;
+        if(test_name !== "")
+            result_message = "[" + test_name + "] " + message;
+        
+        this.test_name = test_name;
+        this.is_success = is_success;
+        this.result_message = result_message;
+        this.summary = summary;
+    }
+
+    print_result() {
+        console.log(this.result_message + "\n");
     }
 }
 
@@ -157,21 +180,6 @@ function assert_neq(expected, actual, message = "") {
             throw "Assertion failed: '" + expected + "' == '" + actual + "'";
         else
             throw "Assertion failed: " + message;
-}
-
-// Build a single test result object
-function test_result(is_success, test_name, message, summary) {
-    let result_message = message;
-    if(test_name !== "")
-        result_message = "[" + test_name + "] " + message;
-    
-    return {
-        test_name: test_name,
-        is_success: is_success,
-        result_message: result_message,
-        summary: summary,
-        print_result: () => console.log(result_message + "\n")
-    }
 }
 
 // Tests
@@ -301,5 +309,3 @@ try {
     module.exports.assert_neq = exports.assert_neq = assert_neq;
     module.exports.run_tests = exports.run_tests = run_tests;
 } catch(error) {}
-
-var EXPORTED_SYMBOLS = ["Test", "TestSuite", "assert", "assert_eq", "assert_neq", "run_tests"];
