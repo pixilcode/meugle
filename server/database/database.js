@@ -1,11 +1,13 @@
 const fs = require("fs-extra");
 const crypto = require("crypto");
+const valid_req = require("./db_request");
 
 class UserDB {
     constructor(location) {
         this.location = location;
         this.users = fs.readJSONSync(location);
         this.logged_in = [];
+        this.modified = false;
     }
 
     has_user(username) {
@@ -21,6 +23,8 @@ class UserDB {
     }
 
     add_user(username, password, salt) {
+        this.modified = true;
+
         this.users.push({
             username: username,
             password_hash: hash_password(password, salt),
@@ -37,12 +41,17 @@ class UserDB {
     }
 
     login(username, password) {
+        this.modified = true;
+
         if(this.match(username, password) && !this.is_logged_in(username)) {
-                let user_id = crypto.randomBytes(16).toString("hex");
-                this.logged_in.push({
-                    username: username,
-                    user_id: user_id
-                });
+            let user_id;
+            do
+                user_id = crypto.randomBytes(16).toString("hex");
+            while(this.logged_in.some((user) => user.user_id === user_id));
+            this.logged_in.push({
+                username: username,
+                user_id: user_id
+            });
         }
 
         return this;
@@ -55,12 +64,21 @@ class UserDB {
     }
 
     logout(username) {
+        this.modified = true;
+
         this.logged_in = this.logged_in.filter((user) => user.username !== username);
         return this;
     }
 
     save() {
-        fs.writeFileSync(location);
+        if(this.modified) {
+            fs.writeFileSync(location);
+            this.modified = false;
+        }
+    }
+
+    request(input) {
+        return new DBRequest(input, this);
     }
 }
 
@@ -79,6 +97,8 @@ function run_tests() {
     const test = require("../test/test");
     const path = require("path");
     const os = require("os");
+
+    valid_req.run_tests();
 
     const Test = test.Test;
     const TestSuite = test.TestSuite;

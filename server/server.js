@@ -9,6 +9,9 @@ database.run_tests();
 // Load the database
 let user_db = new database.UserDB(path.join(__dirname, "..", "data", "users.json"));
 
+// The amount of time between saving (in ms)
+const save_interval = 300000;
+
 const app = express();
 const port = 8080;
 app.listen(port, () => console.log("Listening on port 8080..."));
@@ -34,77 +37,44 @@ app.get("/dashboard", (req, res) => {
 
 app.post("/login", (req, res) => {
     let { username, password } = req.body;
-    let response;
-    if(!user_db.has_user(username))
-        response = {
-            invalid_input: true,
-            server_error: false,
-            user_id: undefined,
-        }
-    else {
-        user_db = user_db
-            .login(username, password)
-            .save();
-        if(!user_db.match(username, password)) {
-            response = {
-                invalid_input: true,
-                server_error: false,
-                user_id: undefined,
-            }
-        } else if(!user_db.is_logged_in(username)) {
-            response = {
-                invalid_input: false,
-                server_error: true,
-                user_id: undefined,
-            }
-        } else {
-            let user_id = user_db.get_user_id(username);
-            response = {
-                invalid_input: false,
-                server_error: false,
-                user_id: user_id,
-            }
-        }
-        
-    }
+    let response = user_db.request({username, password})
+        .validate(({username}, db) => db.has_user(username))
+        .validate(({username, password}, db) => db.match(username, password))
+        .modify_db(({username, password}, db) => db.login(username, password))
+        .check_server(({username}, db) => db.is_logged_in(username))
+        .then(({username}, output, db) => (
+            {user_id: db.get_user_id(username)}
+        ));
+    
+    user_db = response.get_db();
 
-    res.send(JSON.stringify(response));
+    console.log(JSON.stringify(response.to_json()));
+
+    res.send(JSON.stringify(response.to_json()));
 });
 
 app.post("/register", (req, res) => {
     let { username, password } = req.body;
-    let response;
-    if(user_db.has_user(username)) {
-        response = {
-            user_taken: true,
-            server_error: false,
-            user_id: undefined,
-        };
-    } else {
-        let salt = crypto.randomBytes(16).toString('hex');
-        user_db = user_db
-            .add_user(username, password, salt)
-            .login(username, password);
-
-        user_db.save();
-
-        if(!user_db.is_logged_in(data))
-            response = {
-                user_taken: true,
-                server_error: true,
-                user_id: undefined
+    let response = user_db.request({username, password})
+        .then(({username}, output, db) => ({user_taken: db.has_user(username)}))
+        .modify_db(({username, password}, db) => {
+            let salt = crypto.randomBytes(16).toString("hex");
+            return db.add_user(username, password, salt)
+                .login(username, password);
+        })
+        .check_server(({username}, db) => db.is_logged_in(username))
+        .then(({username}, output, db) => {
+            return {
+                user_id: db.get_user_id(username),
+                ...output
             }
-        else {
-            let user_id = user_db.get_user_id(username);
-            response = {
-                user_taken: false,
-                server_error: false,
-                user_id: user_id
-            }
-        }
-    }
+        });
+    
+    user_db = response.get_db();
 
-    res.send(JSON.stringify(response));
+    console.log(JSON.stringify(response.to_json()));
+
+    res.send(JSON.stringify(response.to_json()));
 });
 
 app.get("/:type(js|css|res)/:file", (req, res) => {
@@ -118,6 +88,14 @@ app.use((req, res) => {
 app.use((error, req, res, next) => {
     res.status(500).sendFile(get_public("500.html"));
 });
+
+// TODO Need to lock db when saving
+let save = setInterval(() => {
+    console.log();
+    console.log("Saving...")
+    user_db.save();
+    console.log("Saved!");
+}, save_interval);
 
 function get_public(loc) {
     return path.join(__dirname, "..", "public", loc);
