@@ -4,73 +4,88 @@ class DBRequest {
         this.database = database;
 
         this.invalid_input = false;
-        this.server_error = false;
+        this.db_error = false;
         this.output_data = {};
+
+        this.log = [];
     }
 
     validate(validation) {
-        try {
-            // If validation is successful, input is not invalid
-            this.invalid_input =
-                !validation(this.input_data, this.database);
-        } catch(error) {
-            this.server_error = true;
-        }
+        if(!this.db_error && !this.invalid_input)
+            try {
+                // If validation is successful, input is not invalid
+                let result = !validation(this.input_data, this.database);
+                this.invalid_input = result;
+                this.log.push("Invalid: " + result);
+            } catch(error) {
+                this.db_error = true;
+                this.log.push("Error: " + error);
+            }
 
         return this;
     }
 
-    check_server(check) {
-        try {
-            // If check is successful, there is no error
-            this.server_error =
-                !check(this.input_data, this.database);
-        } catch(error) {
-            this.server_error = true;
-        }
+    check_db(check) {
+        if(!this.db_error && !this.invalid_input)
+            try {
+                // If check is successful, there is no error
+                let result = !check(this.input_data, this.database);
+                this.db_error = result;
+                this.log.push("DB Error: " + result);
+            } catch(error) {
+                this.db_error = true;
+                this.log.push("Error: " + error);
+            }
 
         return this;
     }
 
     modify_db(modify) {
-        if(!this.server_error && !this.invalid_input)
+        if(!this.db_error && !this.invalid_input)
             try {
-                this.database =
-                    modify(this.input_data, this.database);
+                this.database = modify(this.input_data, this.database);
+                this.log.push("Modified DB");
             } catch(error) {
-                this.server_error = true;
+                this.db_error = true;
+                this.log.push("Error: " + error);
             }
         
         return this;
     }
 
     then(fn) {
-        try {
-            this.output_data =
-                fn(this.input_data, this.output_data, this.database);
-        } catch(error) {
-            this.server_error = true;
-        }
+        if(!this.db_error && !this.invalid_input)
+            try {
+                this.output_data = fn(this.input_data, this.output_data, this.database);
+                this.log.push("Transformed Data");
+            } catch(error) {
+                this.db_error = true;
+                this.log.push("Error: " + error);
+            }
 
         return this;
     }
 
     to_json() {
-        if(this.server_error || this.invalid_input)
+        if(this.db_error || this.invalid_input)
             return {
                 invalid_input: this.invalid_input,
-                server_error: this.server_error
+                server_error: this.db_error
             }
         else
             return {
                 invalid_input: this.invalid_input,
-                server_error: this.server_error,
+                server_error: this.db_error,
                 ...this.output_data
             }
     }
 
     get_db() {
         return this.database;
+    }
+
+    get_log() {
+        return this.log;
     }
 }
 
@@ -156,14 +171,14 @@ function run_tests() {
             let user_db = new MockDB();
 
             let request = new DBRequest({username, password}, user_db);
-            request = request.check_server(({username, password}, db) => {
+            request = request.check_db(({username, password}, db) => {
                 return username === "john_doe"
                     && db.name === "mock";
             });
 
             assert(!request.to_json().server_error, "Server error occurred");
 
-            request = request.check_server(({username, password}, db) => false);
+            request = request.check_db(({username, password}, db) => false);
 
             assert(request.to_json().server_error, "Server error did not occur");
         }))
@@ -229,6 +244,41 @@ function run_tests() {
             });
 
             assert(request.get_db().modified);
+        }))
+    
+    .add_test(Test.builder()
+        .name("Test Logger")
+        
+        .description(
+            "Ensure that the logger logs " +
+            "everything correctly")
+        
+        .test(() => {
+            let user_db = new MockDB();
+            let request = new DBRequest({}, user_db);
+
+            request = request.validate((input, db) => true)
+                .check_db((input, db) => true)
+                .modify_db((input, db) => db)
+                .then((input, output, db) => ({}));
+            
+            let log = [
+                "Invalid: false",
+                "DB Error: false",
+                "Modified DB",
+                "Transformed Data"
+            ];
+
+            assert_eq(JSON.stringify(log), JSON.stringify(request.get_log()));
+
+            request = new DBRequest({}, user_db);
+
+            request = request.validate((input, db) => false)
+                .then((input, output, db) => ({failed: true})); // This should not be run
+            
+            log = ["Invalid: true"];
+
+            assert_eq(JSON.stringify(log), JSON.stringify(request.get_log()));
         }))
     
     .build();

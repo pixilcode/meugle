@@ -2,6 +2,7 @@ const express = require("express");
 const path = require("path");
 const database = require("./database/database");
 const body_parser = require("body-parser");
+const crypto = require("crypto");
 
 // Run tests
 database.run_tests();
@@ -10,7 +11,8 @@ database.run_tests();
 let user_db = new database.UserDB(path.join(__dirname, "..", "data", "users.json"));
 
 // The amount of time between saving (in ms)
-const save_interval = 300000;
+// const save_interval = 300000; // Production
+const save_interval = 60000; // Testing
 
 const app = express();
 const port = 8080;
@@ -41,14 +43,14 @@ app.post("/login", (req, res) => {
         .validate(({username}, db) => db.has_user(username))
         .validate(({username, password}, db) => db.match(username, password))
         .modify_db(({username, password}, db) => db.login(username, password))
-        .check_server(({username}, db) => db.is_logged_in(username))
+        .check_db(({username}, db) => db.is_logged_in(username))
         .then(({username}, output, db) => (
             {user_id: db.get_user_id(username)}
         ));
     
     user_db = response.get_db();
 
-    console.log(JSON.stringify(response.to_json()));
+    console.log(response.get_log());
 
     res.send(JSON.stringify(response.to_json()));
 });
@@ -62,7 +64,7 @@ app.post("/register", (req, res) => {
             return db.add_user(username, password, salt)
                 .login(username, password);
         })
-        .check_server(({username}, db) => db.is_logged_in(username))
+        .check_db(({username}, db) => db.is_logged_in(username))
         .then(({username}, output, db) => {
             return {
                 user_id: db.get_user_id(username),
@@ -72,7 +74,7 @@ app.post("/register", (req, res) => {
     
     user_db = response.get_db();
 
-    console.log(JSON.stringify(response.to_json()));
+    console.log(response.get_log());
 
     res.send(JSON.stringify(response.to_json()));
 });
@@ -92,7 +94,8 @@ app.use((error, req, res, next) => {
 // TODO Need to lock db when saving
 let save = setInterval(() => {
     console.log();
-    console.log("Saving...")
+    console.log("Saving...");
+    console.log(user_db.users);
     user_db.save();
     console.log("Saved!");
 }, save_interval);

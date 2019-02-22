@@ -1,6 +1,6 @@
 const fs = require("fs-extra");
 const crypto = require("crypto");
-const valid_req = require("./db_request");
+const db_req = require("./db_request");
 
 class UserDB {
     constructor(location) {
@@ -12,14 +12,13 @@ class UserDB {
 
     has_user(username) {
         return this.users
-            .filter((user) => user.username === username).length > 0;
+            .some((user) => user.username === username);
     }
 
     match(username, password) {
         return this.users.filter((user) => user.username === username)
-            .filter((user) =>
-                user.password_hash === hash_password(password, user.salt))
-            .length > 0;
+            .some((user) =>
+                user.password_hash === hash_password(password, user.salt));
     }
 
     add_user(username, password, salt) {
@@ -37,7 +36,7 @@ class UserDB {
     }
 
     is_logged_in(username) {
-        return this.logged_in.find((user) => user.username === username) !== undefined;
+        return this.logged_in.some((user) => user.username === username);
     }
 
     login(username, password) {
@@ -72,13 +71,13 @@ class UserDB {
 
     save() {
         if(this.modified) {
-            fs.writeFileSync(location);
+            fs.writeFileSync(this.location);
             this.modified = false;
         }
     }
 
     request(input) {
-        return new DBRequest(input, this);
+        return new db_req.DBRequest(input, this);
     }
 }
 
@@ -98,7 +97,7 @@ function run_tests() {
     const path = require("path");
     const os = require("os");
 
-    valid_req.run_tests();
+    db_req.run_tests();
 
     const Test = test.Test;
     const TestSuite = test.TestSuite;
