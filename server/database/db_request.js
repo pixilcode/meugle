@@ -70,12 +70,12 @@ class DBRequest {
         if(this.db_error || this.invalid_input)
             return {
                 invalid_input: this.invalid_input,
-                server_error: this.db_error
+                db_error: this.db_error
             }
         else
             return {
                 invalid_input: this.invalid_input,
-                server_error: this.db_error,
+                db_error: this.db_error,
                 ...this.output_data
             }
     }
@@ -132,7 +132,7 @@ function run_tests() {
 
             let req_json = request.to_json();
             assert(!req_json.invalid_input);
-            assert(!req_json.server_error);
+            assert(!req_json.db_error);
         }))
     
     .add_test(Test.builder()
@@ -176,11 +176,11 @@ function run_tests() {
                     && db.name === "mock";
             });
 
-            assert(!request.to_json().server_error, "Server error occurred");
+            assert(!request.to_json().db_error, "Server error occurred");
 
             request = request.check_db(({username, password}, db) => false);
 
-            assert(request.to_json().server_error, "Server error did not occur");
+            assert(request.to_json().db_error, "Server error did not occur");
         }))
     
     .add_test(Test.builder()
@@ -205,7 +205,7 @@ function run_tests() {
 
             let expected = {
                 invalid_input: false,
-                server_error: false,
+                db_error: false,
                 username: "john_doe",
                 password: "p@$$w0rd",
                 db_name: "mock"
@@ -221,7 +221,7 @@ function run_tests() {
 
             expected = {
                 invalid_input: true,
-                server_error: false
+                db_error: false
             };
 
             assert_eq(JSON.stringify(expected), JSON.stringify(request.to_json()));
