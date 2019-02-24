@@ -5,9 +5,14 @@ const db_req = require("./db_request");
 class UserDB {
     constructor(location) {
         this.location = location;
-        this.users = fs.readJSONSync(location);
         this.logged_in = [];
         this.modified = false;
+
+        try {
+            this.users = fs.readJSONSync(location);
+        } catch(error) {
+            this.users = [];
+        }
     }
 
     has_user(username) {
@@ -71,7 +76,7 @@ class UserDB {
 
     save() {
         if(this.modified) {
-            fs.writeFileSync(this.location);
+            fs.writeJSONSync(this.location, this.users);
             this.modified = false;
         }
     }

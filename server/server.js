@@ -53,8 +53,6 @@ app.post("/login", (req, res) => {
     
     user_db = response.get_db();
 
-    console.log(response.get_log());
-
     let cookie = generate_cookie("user_id", response.to_json().user_id);
     res.setHeader("Set-Cookie", cookie);
     
@@ -79,8 +77,6 @@ app.post("/register", (req, res) => {
         });
     
     user_db = response.get_db();
-
-    console.log(response.get_log());
 
     let cookie = generate_cookie("user_id", response.to_json().user_id);
     res.setHeader("Set-Cookie", cookie);
@@ -112,7 +108,7 @@ function generate_cookie(name, value) {
     let expire = new Date();
     expire.setDate(expire.getTime() + (expr_date*24*60*60*1000));
 
-    return "user_id=" + response.to_json().user_id +
+    return "user_id=" + value +
         // "; expires=" + expire.toUTCString() +
         // Need to figure out how to track login expiration
         "; path=/";
