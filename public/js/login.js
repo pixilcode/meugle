@@ -1,21 +1,16 @@
-function validate() {
+function validate(method, invalid_message) {
     let username_component = document.querySelector("input[name='username']");
     let password_component = document.querySelector("input[name='password']");
 
     let username = username_component.value;
     let password = password_component.value;
 
-    let a = {
-        username: username,
-        password: password
-    }
-
     let data = JSON.stringify({
         username: username,
         password: password
     });
 
-    fetch("/validate", {
+    fetch("/" + method, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -23,18 +18,33 @@ function validate() {
         },
         body: data
     }).then((res) => {
+        // JSON should be
+        // {
+        // invalid_input: bool
+        // db_error: bool
+        // user_id: string
+        // }
         res.json().then((result) => {
-            if(result.successful) {
-                document.location.href = "/dashboard"
+            console.log(result);
+            if(!result.db_error) {
+                if(!result.invalid_input) {
+                    document.location.href = "/dashboard";
+                } else {
+                    username_component.value = "";
+                    password_component.value = "";
+                    error(invalid_message);
+                }
             } else {
                 username_component.value = "";
                 password_component.value = "";
-                show_error(true);
+                error("Server error occurred. Please check back later");
             }
         });
     });
 }
 
-function show_error(show) {
+function show_error(error) {
+    console.log(error);
+    document.getElementById("error").innerHTML = error;
     document.getElementById("error").style.display = "block";
 }

@@ -1,21 +1,20 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Login</title>
+        <title>Register</title>
         <script src="js/login.js"></script>
     </head>
     <body>
-        <p id="login-title">Login</p>
+        <p id="login-title">Register</p>
         <form id="login-form">
             <label for="username">Username:</label>
             <input type="text" name="username" autocomplete="username" />
             <label for="password">Password:</label>
             <input type="password" name="password" />
-            <button type="button" onclick="validate('login', 'Incorrect username/password')">
-                Go
+            <button type="button" onclick="validate('register', 'Username is taken')">
+                Register
             </button>
         </form>
-        <a href="/register">Register</a>
-        <p id="error" style="display: none"></p>
+        <p id="error" style="display: none">Hey there!</p>
     </body>
 </html>
