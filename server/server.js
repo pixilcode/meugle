@@ -28,6 +28,18 @@ app.get("/", (req, res) => {
     res.sendFile(get_public("index.html"));
 });
 
+app.get("/(login|register)", (req, res, next) => {
+    if(req.headers.cookie) {
+        let cookies = parse_cookies(req.headers.cookie);
+        if(cookies.user_id &&
+            user_db.is_valid_id(cookies.user_id))
+            res.redirect("/dashboard");
+        else
+            next();
+    } else
+        next();
+});
+
 app.get("/login", (req, res) => {
     res.sendFile(get_public("login.html"));
 });
@@ -37,6 +49,8 @@ app.get("/register", (req, res) => {
 })
 
 app.get("/dashboard", (req, res) => {
+    // TODO Do some work here to fix the page and personalize it
+    // TODO Check if there is a valid user_id
     res.sendFile(get_public("dashboard.html"));
 })
 
@@ -103,6 +117,17 @@ setInterval(() => {
     user_db.save();
     console.log("Saved!");
 }, save_interval);
+
+function parse_cookies(cookies) {
+    let c = {};
+
+    cookies && cookies.split(";").forEach(cookie => {
+        let parts = cookie.split("=");
+        c[parts.shift().trim()] = decodeURI(parts.join('='));
+    });
+
+    return c;
+}
 
 function generate_cookie(name, value) {
     let expire = new Date();
