@@ -14,6 +14,9 @@ let user_db = new database.UserDB(path.join(__dirname, "..", "data", "users.json
 // const save_interval = 300000; // Production
 const save_interval = 60000; // Testing
 
+// The amount of time before cookies expire (in days)
+const expr_date = 7;
+
 const app = express();
 const port = 8080;
 app.listen(port, () => console.log("Listening on port 8080..."));
@@ -52,6 +55,9 @@ app.post("/login", (req, res) => {
 
     console.log(response.get_log());
 
+    let cookie = generate_cookie("user_id", response.to_json().user_id);
+    res.setHeader("Set-Cookie", cookie);
+    
     res.send(JSON.stringify(response.to_json()));
 });
 
@@ -76,6 +82,9 @@ app.post("/register", (req, res) => {
 
     console.log(response.get_log());
 
+    let cookie = generate_cookie("user_id", response.to_json().user_id);
+    res.setHeader("Set-Cookie", cookie);
+    
     res.send(JSON.stringify(response.to_json()));
 });
 
@@ -92,13 +101,22 @@ app.use((error, req, res, next) => {
 });
 
 // TODO Need to lock db when saving
-let save = setInterval(() => {
+setInterval(() => {
     console.log();
     console.log("Saving...");
-    console.log(user_db.users);
     user_db.save();
     console.log("Saved!");
 }, save_interval);
+
+function generate_cookie(name, value) {
+    let expire = new Date();
+    expire.setDate(expire.getTime() + (expr_date*24*60*60*1000));
+
+    return "user_id=" + response.to_json().user_id +
+        // "; expires=" + expire.toUTCString() +
+        // Need to figure out how to track login expiration
+        "; path=/";
+}
 
 function get_public(loc) {
     return path.join(__dirname, "..", "public", loc);
