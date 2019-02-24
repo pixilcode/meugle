@@ -62,7 +62,7 @@ app.post("/login", (req, res) => {
 app.post("/register", (req, res) => {
     let { username, password } = req.body;
     let response = user_db.request({username, password})
-        .then(({username}, output, db) => ({user_taken: db.has_user(username)}))
+        .validate(({username}, db) => !db.has_user(username))
         .modify_db(({username, password}, db) => {
             let salt = crypto.randomBytes(16).toString("hex");
             return db.add_user(username, password, salt)
@@ -111,7 +111,8 @@ function generate_cookie(name, value) {
     return "user_id=" + value +
         // "; expires=" + expire.toUTCString() +
         // Need to figure out how to track login expiration
-        "; path=/";
+        "; path=/" +
+        "; HttpOnly";
 }
 
 function get_public(loc) {

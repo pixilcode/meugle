@@ -76,7 +76,7 @@ class UserDB {
 
     save() {
         if(this.modified) {
-            fs.writeJSONSync(this.location, this.users);
+            fs.writeJSONSync(this.location, this.users, { spaces: "\t"});
             this.modified = false;
         }
     }
