@@ -67,6 +67,14 @@ class UserDB {
         else return undefined;
     }
 
+    is_valid_id(id) {
+        return this.logged_in.some((user) => user.user_id === id);
+    }
+
+    username_by_id(id) {
+        return this.logged_in.find((user) => user.user_id === id).username;
+    }
+
     logout(username) {
         this.modified = true;
 
@@ -200,6 +208,23 @@ function run_tests() {
 
             assert(!normal.is_logged_in("user_1"));
             assert_eq(normal.get_user_id("user_1"), undefined);
+        }))
+
+    .add_test(Test.builder()
+        .name("Test User ID")
+        
+        .description(
+            "Ensure all functions dealing with " +
+            "user_id work"
+        )
+        
+        .test(() => {
+            let normal = new UserDB(normal_loc);
+            normal = normal.login("user_1", "p@$$w0rd");
+
+            let user_id = normal.get_user_id("user_1");
+            assert(normal.is_valid_id(user_id), "User ID is invalid");
+            assert_eq("user_1", normal.username_by_id(user_id));
         }))
     
     .build();
