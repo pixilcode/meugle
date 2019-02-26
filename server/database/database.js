@@ -33,6 +33,7 @@ class UserDB {
             username: username,
             password_hash: hash_password(password, salt),
             salt: salt,
+            profile_pic: "default.png",
             verb_practice: [],
             custom_sets: []
         });
@@ -49,8 +50,7 @@ class UserDB {
 
         if(this.match(username, password) && !this.is_logged_in(username)) {
             let user_id;
-            do
-                user_id = crypto.randomBytes(16).toString("hex");
+            do user_id = crypto.randomBytes(16).toString("hex");
             while(this.logged_in.some((user) => user.user_id === user_id));
             this.logged_in.push({
                 username: username,
@@ -65,6 +65,13 @@ class UserDB {
         let user = this.logged_in.find((user) => user.username === username);
         if(user) return user.user_id;
         else return undefined;
+    }
+
+    get_pic(username) {
+        let user = this.users.find((user) => user.username === username);
+        console.log(user);
+        if(user) return user.profile_pic;
+        else return "default.png";
     }
 
     is_valid_id(id) {
@@ -130,6 +137,7 @@ function run_tests() {
             username: "user_1",
             password_hash: hashed_password.read().toString("hex"),
             salt: "abc123",
+            profile_pic: "default.png",
             verb_practice: [],
             custom_sets: []
         }]));
@@ -137,7 +145,7 @@ function run_tests() {
     let suite = TestSuite.builder()
     .name("Database Tests")
 
-    .description("Test that each database works")
+    .description("Test that each database function works")
 
     .add_test(Test.builder()
         .name("Has User Test")
@@ -225,6 +233,19 @@ function run_tests() {
             let user_id = normal.get_user_id("user_1");
             assert(normal.is_valid_id(user_id), "User ID is invalid");
             assert_eq("user_1", normal.username_by_id(user_id));
+        }))
+    
+    .add_test(Test.builder()
+        .name("Test User Access")
+        
+        .description(
+            "Ensure that the UserDB returns the " +
+            "user data"
+        )
+        
+        .test(() => {
+            let normal = new UserDB(normal_loc);
+            assert_eq("default.png", normal.get_pic("user_1"));
         }))
     
     .build();

@@ -3,6 +3,7 @@ const path = require("path");
 const database = require("./database/database");
 const body_parser = require("body-parser");
 const crypto = require("crypto");
+const fs = require("fs");
 
 // Run tests
 database.run_tests();
@@ -28,7 +29,7 @@ app.get("/", (req, res) => {
     res.sendFile(get_public("index.html"));
 });
 
-app.get("/(login|register)", (req, res, next) => {
+app.get("/login|/register", (req, res, next) => {
     if(req.headers.cookie) {
         let cookies = parse_cookies(req.headers.cookie);
         if(cookies.user_id &&
@@ -46,13 +47,29 @@ app.get("/login", (req, res) => {
 
 app.get("/register", (req, res) => {
     res.sendFile(get_public("register.html"));
-})
+});
+
+app.get("/dashboard", (req, res, next) => {
+    if(req.headers.cookie) {
+        let cookies = parse_cookies(req.headers.cookie);
+        if(cookies.user_id &&
+            user_db.is_valid_id(cookies.user_id)) {
+            req.user_id = cookies.user_id;
+            next();
+        } else
+            res.redirect("/login");
+    } else
+        res.redirect("/login");
+});
 
 app.get("/dashboard", (req, res) => {
     // TODO Do some work here to fix the page and personalize it
-    // TODO Check if there is a valid user_id
-    res.sendFile(get_public("dashboard.html"));
-})
+    let username = user_db.username_by_id(req.user_id);
+    let file = fs.readFileSync(get_public("dashboard.html"), {encoding: "utf8"})
+        .split("{{username}}").join(username)
+        .split("{{profile picture}}").join(user_db.get_pic(username));
+    res.send(file);
+});
 
 app.post("/login", (req, res) => {
     let { username, password } = req.body;
@@ -107,6 +124,7 @@ app.use((req, res) => {
 });
 
 app.use((error, req, res, next) => {
+    console.log(error);
     res.status(500).sendFile(get_public("500.html"));
 });
 
