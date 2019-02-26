@@ -1,9 +1,12 @@
 const express = require("express");
 const path = require("path");
 const database = require("./database/database");
+const template_file = require("./template_file");
 const body_parser = require("body-parser");
 const crypto = require("crypto");
-const fs = require("fs");
+const fs = require("fs-extra");
+
+// TODO Start working on Vocab database
 
 // Run tests
 database.run_tests();
@@ -24,6 +27,10 @@ app.listen(port, () => console.log("Listening on port 8080..."));
 
 app.use(body_parser.json());
 app.use(body_parser.urlencoded({ extended: true }));
+
+app.get("/:type(js|css|res)/:file", (req, res) => {
+    res.sendFile(get_public(req.params.type + "/" + req.params.file));
+});
 
 app.get("/", (req, res) => {
     res.sendFile(get_public("index.html"));
@@ -65,10 +72,10 @@ app.get("/dashboard", (req, res, next) => {
 app.get("/dashboard", (req, res) => {
     // TODO Do some work here to fix the page and personalize it
     let username = user_db.username_by_id(req.user_id);
-    let file = fs.readFileSync(get_public("dashboard.html"), {encoding: "utf8"})
-        .split("{{username}}").join(username)
-        .split("{{profile picture}}").join(user_db.get_pic(username));
-    res.send(file);
+    let file = new template_file.TemplateFile(get_public("dashboard.html"))
+        .variable("username", username)
+        .variable("profile picture", user_db.get_pic(username));
+    res.send(file.toString());
 });
 
 app.post("/login", (req, res) => {
@@ -113,10 +120,6 @@ app.post("/register", (req, res) => {
     res.setHeader("Set-Cookie", cookie);
     
     res.send(JSON.stringify(response.to_json()));
-});
-
-app.get("/:type(js|css|res)/:file", (req, res) => {
-    res.sendFile(get_public(req.params.type + "/" + req.params.file));
 });
 
 app.use((req, res) => {
