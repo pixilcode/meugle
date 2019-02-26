@@ -12,6 +12,16 @@ class TemplateFile {
         return this;
     }
 
+    list(name, list) {
+        let list_elements = list.map(item => "<li>" + item + "</li>\n").join("");
+        this.file = this.file
+            .split("{{ulist " + name + "}}")
+            .join("<ul>\n" + list_elements + "</ul>\n")
+            .split("{{olist " + name + "}}")
+            .join("<ol>\n" + list_elements + "</ol>\n")
+        return this;
+    }
+
     toString() {
         return this.file;
     }
@@ -34,7 +44,11 @@ function run_tests() {
     let html =
 "<html>\
 <head></head>\
-<body>{{text}}</body>\
+<body>\
+<p>{{text}}</p>\
+{{ulist other}}\
+{{olist other}}\
+</body>\
 </html>"
     fs.writeFileSync(file_loc, html);
     
@@ -68,11 +82,36 @@ function run_tests() {
                 let file = new TemplateFile(file_loc)
                     .variable("text", "replaced");
                 let result = file.toString();
-                let expected =
-"<html>\
-<head></head>\
-<body>replaced</body>\
-</html>"
+                let expected = html.split("{{text}}").join("replaced");
+
+                assert_eq(expected, result);
+            }))
+
+        .add_test(Test.builder()
+            .name("Test List Replace")
+            
+            .description(
+                "Test whether lists produce the " +
+                "correct HTML"
+            )
+            
+            .test(() => {
+                let file = new TemplateFile(file_loc)
+                    .list("other", ["A", "B", "C"]);
+                let result = file.toString();
+                let expected = html.split("{{ulist other}}").join(
+                    "<ul>\n" +
+                    "<li>A</li>\n" +
+                    "<li>B</li>\n" +
+                    "<li>C</li>\n" +
+                    "</ul>\n"
+                ).split("{{olist other}}").join(
+                    "<ol>\n" +
+                    "<li>A</li>\n" +
+                    "<li>B</li>\n" +
+                    "<li>C</li>\n" +
+                    "</ol>\n"
+                );
 
                 assert_eq(expected, result);
             }))
@@ -86,3 +125,5 @@ try {
     module.exports.run_tests = exports.run_tests = run_tests;
     module.exports.TemplateFile = exports.TemplateFile = TemplateFile;
 } catch(error) {}
+
+run_tests();
