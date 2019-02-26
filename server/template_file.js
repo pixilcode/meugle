@@ -16,9 +16,9 @@ class TemplateFile {
         let list_elements = list.map(item => "<li>" + item + "</li>\n").join("");
         this.file = this.file
             .split("{{ulist " + name + "}}")
-            .join("<ul>\n" + list_elements + "</ul>\n")
+            .join("<ul id='" + name + "'>\n" + list_elements + "</ul>\n")
             .split("{{olist " + name + "}}")
-            .join("<ol>\n" + list_elements + "</ol>\n")
+            .join("<ol id='" + name + "'>\n" + list_elements + "</ol>\n")
         return this;
     }
 
@@ -100,13 +100,13 @@ function run_tests() {
                     .list("other", ["A", "B", "C"]);
                 let result = file.toString();
                 let expected = html.split("{{ulist other}}").join(
-                    "<ul>\n" +
+                    "<ul id='other'>\n" +
                     "<li>A</li>\n" +
                     "<li>B</li>\n" +
                     "<li>C</li>\n" +
                     "</ul>\n"
                 ).split("{{olist other}}").join(
-                    "<ol>\n" +
+                    "<ol id='other'>\n" +
                     "<li>A</li>\n" +
                     "<li>B</li>\n" +
                     "<li>C</li>\n" +
