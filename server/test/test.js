@@ -167,10 +167,12 @@ function assert(statement, message = "") {
 }
 
 function assert_eq(expected, actual, message = "") {
-    if(typeof expected === "object" || typeof actual === "object")
+    if(typeof expected === "object" || typeof actual === "object") {
         for(let i in expected)
             assert_eq(expected[i], actual[i], message);
-    else if(expected !== actual)
+        for(let i in actual)
+            assert_eq(expected[i], actual[i], message);
+    } else if(expected !== actual)
         if(message === "")
             throw "Assertion failed: '" + expected + "' != '" + actual + "'";
         else
@@ -178,10 +180,12 @@ function assert_eq(expected, actual, message = "") {
 }
 
 function assert_neq(expected, actual, message = "") {
-    if(typeof expected === "object" || typeof actual === "object")
+    if(typeof expected === "object" || typeof actual === "object") {
         for(let i in expected)
-            assert_eq(expected[i], actual[i], message);
-    else if(expected === actual)
+            assert_neq(expected[i], actual[i], message);
+        for(let i in actual)
+            assert_neq(expected[i], actual[i], message);
+    } else if(expected === actual)
         if(message === "")
             throw "Assertion failed: '" + expected + "' == '" + actual + "'";
         else
@@ -301,6 +305,27 @@ function run_tests() {
                 result.result_message
             )
         }))
+    
+        .add_test(Test.builder()
+            .name("Test Equality Assertion")
+            
+            .description(
+                "Test that 'assert_eq' and " +
+                "'assert_neq' work correctly"
+            )
+            
+            .test(() => {
+                assert_eq(undefined, undefined);
+                assert_neq(undefined, {});
+
+                assert_eq({}, {});
+                assert_neq({}, {a: "hello"});
+                assert_neq({a: "hello"}, {});
+
+                assert_eq(["hello", "world"], ["hello", "world"]);
+                assert_neq("helloworld", ["hello", "world"]);
+            }))
+
     .build();
 
     TestSuite.run(suite).print_result();
@@ -315,3 +340,5 @@ try {
     module.exports.assert_neq = exports.assert_neq = assert_neq;
     module.exports.run_tests = exports.run_tests = run_tests;
 } catch(error) {}
+
+run_tests();
