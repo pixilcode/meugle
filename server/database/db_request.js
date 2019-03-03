@@ -211,7 +211,7 @@ function run_tests() {
                 db_name: "mock"
             };
 
-            assert_eq(JSON.stringify(expected), JSON.stringify(request.to_json()));
+            assert_eq(expected, request.to_json());
 
             request = request.validate(({username, password}, db) => {
                 return false;
@@ -224,7 +224,7 @@ function run_tests() {
                 db_error: false
             };
 
-            assert_eq(JSON.stringify(expected), JSON.stringify(request.to_json()));
+            assert_eq(expected, request.to_json());
         }))
     
     .add_test(Test.builder()
@@ -269,7 +269,7 @@ function run_tests() {
                 "Transformed Data"
             ];
 
-            assert_eq(JSON.stringify(log), JSON.stringify(request.get_log()));
+            assert_eq(log, request.get_log());
 
             request = new DBRequest({}, user_db);
 
@@ -278,7 +278,7 @@ function run_tests() {
             
             log = ["Invalid: true"];
 
-            assert_eq(JSON.stringify(log), JSON.stringify(request.get_log()));
+            assert_eq(log, request.get_log());
         }))
     
     .build();
