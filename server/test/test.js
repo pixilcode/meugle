@@ -294,5 +294,3 @@ try {
     module.exports.assert_neq = exports.assert_neq = assert_neq;
     module.exports.run_tests = exports.run_tests = run_tests;
 } catch(error) {}
-
-run_tests();
