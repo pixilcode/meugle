@@ -1,3 +1,5 @@
+const assert = require("assert");
+
 class Test {
     static builder() {
         return new TestBuilder();
@@ -8,7 +10,9 @@ class Test {
             test.test_method();
             return new Result(true, test.name, "Success!", test.name + ": 1 run, 0 failed");
         } catch(error) {
-            return new Result(false, test.name, error, test.name + ": 1 run, 1 failed");
+            return new Result(false, test.name,
+                error.name + ": " + error.message,
+                test.name + ": 1 run, 1 failed");
         }
     }
 
@@ -158,39 +162,8 @@ class Result {
     }
 }
 
-function assert(statement, message = "") {
-    if(!statement)
-        if(message === "")
-            throw "Assertion failed";
-        else
-            throw "Assertion failed: " + message;
-}
-
-function assert_eq(expected, actual, message = "") {
-    if(typeof expected === "object" || typeof actual === "object") {
-        for(let i in expected)
-            assert_eq(expected[i], actual[i], message);
-        for(let i in actual)
-            assert_eq(expected[i], actual[i], message);
-    } else if(expected !== actual)
-        if(message === "")
-            throw "Assertion failed: '" + expected + "' != '" + actual + "'";
-        else
-            throw "Assertion failed: " + message;
-}
-
-function assert_neq(expected, actual, message = "") {
-    if(typeof expected === "object" || typeof actual === "object") {
-        for(let i in expected)
-            assert_neq(expected[i], actual[i], message);
-        for(let i in actual)
-            assert_neq(expected[i], actual[i], message);
-    } else if(expected === actual)
-        if(message === "")
-            throw "Assertion failed: '" + expected + "' == '" + actual + "'";
-        else
-            throw "Assertion failed: " + message;
-}
+const assert_eq = assert.deepStrictEqual;
+const assert_neq = assert.notDeepStrictEqual;
 
 // Tests
 function run_tests() {
@@ -238,7 +211,8 @@ function run_tests() {
             let result = Test.run(fail);
 
             assert(!result.is_success);
-            assert_eq("[Fail Test] Assertion failed", result.result_message);
+            assert_eq("[Fail Test] AssertionError [ERR_ASSERTION]: false == true",
+                result.result_message);
         }))
 
 
@@ -268,7 +242,7 @@ function run_tests() {
                 "\n\tSuccesses" +
                 "\n\t\t[Success Test] Success!" +
                 "\n\tFailures" +
-                "\n\t\t[Fail Test] Assertion failed",
+                "\n\t\t[Fail Test] AssertionError [ERR_ASSERTION]: false == true",
                 result.result_message
             );
         }))
