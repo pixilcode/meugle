@@ -279,26 +279,6 @@ function run_tests() {
                 result.result_message
             )
         }))
-    
-        .add_test(Test.builder()
-            .name("Test Equality Assertion")
-            
-            .description(
-                "Test that 'assert_eq' and " +
-                "'assert_neq' work correctly"
-            )
-            
-            .test(() => {
-                assert_eq(undefined, undefined);
-                assert_neq(undefined, {});
-
-                assert_eq({}, {});
-                assert_neq({}, {a: "hello"});
-                assert_neq({a: "hello"}, {});
-
-                assert_eq(["hello", "world"], ["hello", "world"]);
-                assert_neq("helloworld", ["hello", "world"]);
-            }))
 
     .build();
 
