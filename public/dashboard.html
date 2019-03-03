@@ -9,7 +9,7 @@
         </header>
         <main id="dashboard">
             <header >
-                <img src="res/{{profile picture}}" alt="Profile Picture" />
+                <img src="res/{{profile-picture}}" alt="Profile Picture" />
                 <h2>{{username}}</h2>
                 <p>&#9660; Manage</p>
             </header>
@@ -23,11 +23,7 @@
             </section>
             <section id="frequently-missed">
                 <h3>Frequently Missed Verbs</h3>
-                <ul>
-                    <li>Verb 1</li>
-                    <li>Verb 2</li>
-                    <li>Verb 3</li>
-                </ul>
+                {{ulist freq-missed}}
             </section>
         </main>
         <aside id="verb-list">
@@ -39,11 +35,7 @@
                 <li>Filter 2</li>
                 <li>Filter 3</li>
             </ul>
-            <ul id="verbs">
-                <li>Verb 1</li>
-                <li>Verb 2</li>
-                <li>Verb 3</li>
-            </ul>
+            {{ulist verbs}}
         </aside>
     </body>
 </html>

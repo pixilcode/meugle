@@ -10,6 +10,7 @@ const fs = require("fs-extra");
 
 // Run tests
 database.run_tests();
+template_file.run_tests();
 
 // Load the database
 let user_db = new database.UserDB(path.join(__dirname, "..", "data", "users.json"));
@@ -74,7 +75,8 @@ app.get("/dashboard", (req, res) => {
     let username = user_db.username_by_id(req.user_id);
     let file = new template_file.TemplateFile(get_public("dashboard.html"))
         .variable("username", username)
-        .variable("profile picture", user_db.get_pic(username));
+        .variable("profile-picture", user_db.get_pic(username))
+        .list("freq-missed", user_db.get_freq_missed(username, 5));
     res.send(file.toString());
 });
 
@@ -98,6 +100,7 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
+    // TODO Ensure that the username meets certain requirements
     let { username, password } = req.body;
     let response = user_db.request({username, password})
         .validate(({username}, db) => !db.has_user(username))
