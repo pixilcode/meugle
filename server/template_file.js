@@ -125,5 +125,3 @@ try {
     module.exports.run_tests = exports.run_tests = run_tests;
     module.exports.TemplateFile = exports.TemplateFile = TemplateFile;
 } catch(error) {}
-
-run_tests();
