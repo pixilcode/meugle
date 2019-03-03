@@ -12,8 +12,9 @@ const fs = require("fs-extra");
 database.run_tests();
 template_file.run_tests();
 
-// Load the database
+// Load the databases
 let user_db = new database.UserDB(path.join(__dirname, "..", "data", "users.json"));
+let verb_db = new database.VerbDB(path.join(__dirname, "..", "data", "verbs.json"));
 
 // The amount of time between saving (in ms)
 // const save_interval = 300000; // Production
@@ -76,7 +77,8 @@ app.get("/dashboard", (req, res) => {
     let file = new template_file.TemplateFile(get_public("dashboard.html"))
         .variable("username", username)
         .variable("profile-picture", user_db.get_pic(username))
-        .list("freq-missed", user_db.get_freq_missed(username, 5));
+        .list("freq-missed", user_db.get_freq_missed(username, 5))
+        .list("verbs", verb_db.verb_list());
     res.send(file.toString());
 });
 
@@ -139,6 +141,7 @@ setInterval(() => {
     console.log();
     console.log("Saving...");
     user_db.save();
+    verb_db.save();
     console.log("Saved!");
 }, save_interval);
 
