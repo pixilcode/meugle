@@ -56,15 +56,15 @@ class TestSuite {
     }
 
     static run(test_suite) {
-        let ignored = test_suite.tests.filter((test) => test.ignore);
-        let results = test_suite.tests.filter((test) => !test.ignore).map((test) => Test.run(test));
+        let ignored = test_suite.tests.filter(test => test.ignore);
+        let results = test_suite.tests.filter(test => !test.ignore).map(test => Test.run(test));
         let is_success = false;
 
-        if(results.every((result) => result.is_success))
+        if(results.every(result => result.is_success))
             is_success = true;
         
         let tests_run = results.length;
-        let tests_failed = results.filter((result) => !result.is_success).length;
+        let tests_failed = results.filter(result => !result.is_success).length;
 
         let summary = tests_run + " run, " + tests_failed + " failed";
         if(test_suite.name !== "")
@@ -76,8 +76,8 @@ class TestSuite {
         if(ignored.length > 0)
             message += ", " + ignored.length + " ignored";
 
-        let successes = results.filter((result) => result.is_success);
-        let failures = results.filter((result) => !result.is_success);
+        let successes = results.filter(result => result.is_success);
+        let failures = results.filter(result => !result.is_success);
 
         if(successes.length > 0) {
             message += "\n\tSuccesses";
@@ -167,7 +167,10 @@ function assert(statement, message = "") {
 }
 
 function assert_eq(expected, actual, message = "") {
-    if(expected !== actual)
+    if(typeof expected === "object" || typeof actual === "object")
+        for(let i in expected)
+            assert_eq(expected[i], actual[i], message);
+    else if(expected !== actual)
         if(message === "")
             throw "Assertion failed: '" + expected + "' != '" + actual + "'";
         else
@@ -175,7 +178,10 @@ function assert_eq(expected, actual, message = "") {
 }
 
 function assert_neq(expected, actual, message = "") {
-    if(expected === actual)
+    if(typeof expected === "object" || typeof actual === "object")
+        for(let i in expected)
+            assert_eq(expected[i], actual[i], message);
+    else if(expected === actual)
         if(message === "")
             throw "Assertion failed: '" + expected + "' == '" + actual + "'";
         else
