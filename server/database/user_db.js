@@ -196,7 +196,7 @@ function run_tests() {
         }]));
 
     let suite = TestSuite.builder()
-    .name("Database Tests")
+    .name("User Database Tests")
 
     .description("Test that each database function works")
 
