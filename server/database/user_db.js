@@ -80,7 +80,7 @@ class UserDB {
             let infinitive = verb.infinitive;
             return verb.tenses.map(tense => ({infinitive, ...tense}));
         })
-        .reduce((prev, current) => prev.concat(current), [])
+        .reduce((prev, current) => [...prev, ...current], [])
         .sort((a, b) => {
             if(a.incorrect !== b.incorrect) // If one has more incorrect than the other
                 return b.incorrect - a.incorrect; // The one with greater incorrect goes first
@@ -154,8 +154,8 @@ function run_tests() {
     let hashed_password = crypto.createHash("md5");
     hashed_password.write("abc123" + "p@$$w0rd");
     hashed_password.end();
-    fs.writeFileSync(normal_loc,
-        JSON.stringify([{
+    fs.writeJSONSync(normal_loc,
+        [{
             username: "user_1",
             password_hash: hashed_password.read().toString("hex"),
             salt: "abc123",
@@ -193,7 +193,7 @@ function run_tests() {
                 }
             ],
             custom_sets: []
-        }]));
+        }]);
 
     let suite = TestSuite.builder()
     .name("User Database Tests")
