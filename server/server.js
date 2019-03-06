@@ -13,6 +13,10 @@ const crypto = require("crypto");
 //      that verbs aren't repeated, among other things
 // TODO Always validate *all* form submissions
 // TODO Make a way to edit the verbs
+// TODO Lock DB when saving it
+// TODO Figure out how to track login expiration
+// TODO Ensure that username and password meet certain
+//      requirements
 
 // Run tests
 database.run_tests();
@@ -23,8 +27,7 @@ let user_db = new database.UserDB(path.join(__dirname, "..", "data", "users.json
 let verb_db = new database.VerbDB(path.join(__dirname, "..", "data", "verbs.json"));
 
 // The amount of time between saving (in ms)
-// const save_interval = 300000; // Production
-const save_interval = 60000; // Testing
+const save_interval = 60000; // Once per minute
 
 // The amount of time before cookies expire (in days)
 const expr_date = 7;
@@ -77,7 +80,6 @@ app.get("/dashboard|/verbs/.+", (req, res, next) => {
 });
 
 app.get("/dashboard", (req, res) => {
-    // TODO Do some work here to fix the page and personalize it
     let username = user_db.username_by_id(req.user_id);
     let file = new template_file.TemplateFile(get_public("dashboard.html"))
         .variable("username", username)
@@ -118,7 +120,6 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-    // TODO Ensure that the username meets certain requirements
     let { username, password } = req.body;
     let response = user_db.request({username, password})
         .validate(({username}, db) => !db.has_user(username))
@@ -150,7 +151,6 @@ app.post("/verbs/manage", (req, res) => {
         for(let verb in verbs)
             verb_db = verb_db.remove_verb(verb);
     else if(edit) { // Edit?
-        // TODO Make a way to edit the verbs
     }
 
     res.redirect("/verbs/manage");
@@ -162,6 +162,22 @@ app.post("/verbs/add", (req, res) => {
     res.redirect("/verbs/add");
 });
 
+app.use("/logout", (req, res) => {
+    if(req.headers.cookie) {
+        let cookies = parse_cookies(req.headers.cookie);
+        if(cookies.user_id &&
+            user_db.is_valid_id(cookies.user_id)) {
+            let username = user_db.username_by_id(cookies.user_id);
+            user_db = user_db.logout(username);
+        }
+    }
+
+    let cookie = remove_cookie("user_id", "");
+    res.setHeader("Set-Cookie", cookie);
+
+    res.redirect("/login");
+});
+
 app.use((req, res) => {
     res.status(404).sendFile(get_public("404.html"));
 });
@@ -171,7 +187,6 @@ app.use((error, req, res, next) => {
     res.status(500).sendFile(get_public("500.html"));
 });
 
-// TODO Need to lock db when saving
 setInterval(() => {
     user_db.save();
     verb_db.save();
@@ -189,12 +204,18 @@ function parse_cookies(cookies) {
 }
 
 function generate_cookie(name, value) {
-    let expire = new Date();
-    expire.setDate(expire.getTime() + (expr_date*24*60*60*1000));
+    return name + "=" + value +
+        "; path=/" +
+        "; HttpOnly";
+}
 
-    return "user_id=" + value +
-        // "; expires=" + expire.toUTCString() +
-        // Need to figure out how to track login expiration
+function remove_cookie(name, value) {
+    // Set the expiration date to a date that has passed
+    // in order to remove the cookie
+    let expire = new Date(Date.now() - 60000);
+
+    return name + "=" + value +
+        "; expires=" + expire.toUTCString() +
         "; path=/" +
         "; HttpOnly";
 }
