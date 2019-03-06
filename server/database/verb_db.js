@@ -16,6 +16,18 @@ class VerbDB {
         return this.verbs.map(verb => verb.infinitive);
     }
 
+    add_verb(verb) {
+        this.verbs.push(verb);
+        this.modified = true;
+        return this;
+    }
+
+    remove_verb(verb) {
+        this.verbs = this.verbs.filter(v => v.infinitive !== verb);
+        this.modified = true;
+        return this;
+    }
+
     save() {
         if(this.modified) {
             fs.writeJSONSync(this.location, this.verbs, { spaces: "\t"});
@@ -76,6 +88,39 @@ function run_tests() {
         .test(() => {
             let verb_db = new VerbDB(db_loc);
             let expected = ["verb1"];
+            assert_eq(expected, verb_db.verb_list());
+        }))
+    
+    .add_test(Test.builder()
+        .name("Test Add/Remove Verb")
+        
+        .description(
+            "Test that verbs can be added/" +
+            "removed to the database"
+        )
+        
+        .test(() => {
+            let verb_db = new VerbDB(db_loc);
+            let expected = ["verb1"];
+            assert_eq(expected, verb_db.verb_list());
+
+            verb_db = verb_db.add_verb({
+                infinitive: "verb2",
+                tenses: [{
+                    tense: "present",
+                    je: "a",
+                    tu: "b",
+                    il: "c",
+                    nous: "d",
+                    vous: "e",
+                    ils: "f"
+                }]
+            });
+            expected.push("verb2");
+            assert_eq(expected, verb_db.verb_list());
+
+            verb_db = verb_db.remove_verb("verb2");
+            expected = expected.filter(verb => verb !== "verb2");
             assert_eq(expected, verb_db.verb_list());
         }))
     

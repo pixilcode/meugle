@@ -4,9 +4,15 @@ const database = require("./database/database");
 const template_file = require("./template_file");
 const body_parser = require("body-parser");
 const crypto = require("crypto");
-const fs = require("fs-extra");
 
-// TODO Start working on Vocab database
+// TODO Create admin privileges
+// TODO Use as little client-side JS as possible
+//      in order to make content accessible
+// TODO Use responsive web design
+// TODO Make validation in verb_db to ensure
+//      that verbs aren't repeated, among other things
+// TODO Always validate *all* form submissions
+// TODO Make a way to edit the verbs
 
 // Run tests
 database.run_tests();
@@ -29,7 +35,6 @@ app.listen(port, () => console.log("Listening on port 8080..."));
 
 app.use(body_parser.json());
 app.use(body_parser.urlencoded({ extended: true }));
-
 app.get("/:type(js|css|res)/:file", (req, res) => {
     res.sendFile(get_public(req.params.type + "/" + req.params.file));
 });
@@ -58,7 +63,7 @@ app.get("/register", (req, res) => {
     res.sendFile(get_public("register.html"));
 });
 
-app.get("/dashboard", (req, res, next) => {
+app.get("/dashboard|/verbs/.+", (req, res, next) => {
     if(req.headers.cookie) {
         let cookies = parse_cookies(req.headers.cookie);
         if(cookies.user_id &&
@@ -79,6 +84,17 @@ app.get("/dashboard", (req, res) => {
         .variable("profile-picture", user_db.get_pic(username))
         .list("freq-missed", user_db.get_freq_missed(username, 5))
         .list("verbs", verb_db.verb_list());
+    res.send(file.toString());
+});
+
+app.get("/verbs/manage", (req, res) => {
+    let file = new template_file.TemplateFile(get_public("manage-verbs.html"))
+        .checklist("verbs", verb_db.verb_list());
+    res.send(file.toString());
+});
+
+app.get("/verbs/add", (req, res) => {
+    let file = new template_file.TemplateFile(get_public("add-verbs.html"));
     res.send(file.toString());
 });
 
@@ -127,6 +143,25 @@ app.post("/register", (req, res) => {
     res.send(JSON.stringify(response.to_json()));
 });
 
+app.post("/verbs/manage", (req, res) => {
+    let { del=false, edit=false, ...verbs } = req.body; // 'del' is delete
+
+    if(del) // Delete?
+        for(let verb in verbs)
+            verb_db = verb_db.remove_verb(verb);
+    else if(edit) { // Edit?
+        // TODO Make a way to edit the verbs
+    }
+
+    res.redirect("/verbs/manage");
+});
+
+app.post("/verbs/add", (req, res) => {
+    let verb = verb_from(req.body);
+    verb_db = verb_db.add_verb(verb);
+    res.redirect("/verbs/add");
+});
+
 app.use((req, res) => {
     res.status(404).sendFile(get_public("404.html"));
 });
@@ -138,11 +173,8 @@ app.use((error, req, res, next) => {
 
 // TODO Need to lock db when saving
 setInterval(() => {
-    console.log();
-    console.log("Saving...");
     user_db.save();
     verb_db.save();
-    console.log("Saved!");
 }, save_interval);
 
 function parse_cookies(cookies) {
@@ -165,6 +197,30 @@ function generate_cookie(name, value) {
         // Need to figure out how to track login expiration
         "; path=/" +
         "; HttpOnly";
+}
+
+function verb_from(req_body) {
+    // Extract the tenses
+    let tenses = [];
+    
+    for(let val in req_body)
+        if(/tense-\d+/.test(val)) { // If the key matches 'tense-#'
+            let i = /\d+/.exec(val)[0]; // Get the number
+            tenses.push({
+                tense: req_body["tense-"+i],
+                je: req_body["je-"+i],
+                tu: req_body["tu-"+i],
+                il: req_body["il-"+i],
+                nous: req_body["nous-"+i],
+                vous: req_body["vous-"+i],
+                ils: req_body["ils-"+i]
+            });
+        }
+    
+    return {
+        infinitive: req_body.infinitive,
+        tenses
+    };
 }
 
 function get_public(loc) {

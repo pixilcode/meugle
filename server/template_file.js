@@ -22,6 +22,25 @@ class TemplateFile {
         return this;
     }
 
+    checklist(name, list) {
+        let converted = name => name.split(" ").join("-");
+        let list_elements = list
+            .map(item => "<input type='checkbox' name='" +
+                converted(item) + "' id='"+ 
+                converted(item) + "' /><label for='" +
+                converted(item) + "'>" +
+                item + "</label>\n")
+            .join("");
+        this.file = this.file
+            .split("{{checklist " + name + "}}")
+            .join(
+                "<fieldset name='" + name + "'>\n" +
+                list_elements +
+                "</fieldset>\n"
+            );
+        return this;
+    }
+
     toString() {
         return this.file;
     }
@@ -46,8 +65,9 @@ function run_tests() {
 <head></head>\
 <body>\
 <p>{{text}}</p>\
-{{ulist other}}\
-{{olist other}}\
+{{ulist list}}\
+{{olist list}}\
+{{checklist check}}\
 </body>\
 </html>"
     fs.writeFileSync(file_loc, html);
@@ -97,20 +117,43 @@ function run_tests() {
             
             .test(() => {
                 let file = new TemplateFile(file_loc)
-                    .list("other", ["A", "B", "C"]);
+                    .list("list", ["A", "B", "C"]);
                 let result = file.toString();
-                let expected = html.split("{{ulist other}}").join(
-                    "<ul id='other'>\n" +
+                let expected = html.split("{{ulist list}}").join(
+                    "<ul id='list'>\n" +
                     "<li>A</li>\n" +
                     "<li>B</li>\n" +
                     "<li>C</li>\n" +
                     "</ul>\n"
-                ).split("{{olist other}}").join(
-                    "<ol id='other'>\n" +
+                ).split("{{olist list}}").join(
+                    "<ol id='list'>\n" +
                     "<li>A</li>\n" +
                     "<li>B</li>\n" +
                     "<li>C</li>\n" +
                     "</ol>\n"
+                );
+
+                assert_eq(expected, result);
+            }))
+        
+        .add_test(Test.builder()
+            .name("Test Checklist Replace")
+            
+            .description(
+                "Ensure that checklists are " +
+                "correctly replaced"
+            )
+            
+            .test(() => {
+                let file = new TemplateFile(file_loc)
+                    .checklist("check", ["A", "B", "C D"]);
+                let result = file.toString();
+                let expected = html.split("{{checklist check}}").join(
+                    "<fieldset name='check'>\n" +
+                    "<input type='checkbox' name='A' id='A' /><label for='A'>A</label>\n" +
+                    "<input type='checkbox' name='B' id='B' /><label for='B'>B</label>\n" +
+                    "<input type='checkbox' name='C-D' id='C-D' /><label for='C-D'>C D</label>\n" +
+                    "</fieldset>\n"
                 );
 
                 assert_eq(expected, result);

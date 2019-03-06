@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Manage Verbs | Meuglé</title>
+    </head>
+    <body>
+        <header>
+            <img src="/res/long-logo.png" alt="Meuglé" />
+        </header>
+        <main>
+            <a href="/dashboard">Home</a>
+            <h2>Verb List</h2>
+            <a href="/verbs/add">Add a Verb</a>
+            <form method="post">
+                <button name="del" value="true">Delete</button>
+                <button name="edit" value="true">Edit</button>
+                {{checklist verbs}}
+            </form>
+        </main>
+    </body>
+</html>

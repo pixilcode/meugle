@@ -5,7 +5,7 @@
     </head>
     <body>
         <header>
-            <img src="res/logo.png" alt="Meuglé" />
+            <img src="/res/long-logo.png" alt="Meuglé" />
         </header>
         <main id="dashboard">
             <header >
@@ -28,13 +28,8 @@
         </main>
         <aside id="verb-list">
             <h2>List of Verbs</h2>
+            <a href="/verbs/manage">Manage Verbs</a>
             <input type="search" placeholder="Search" />
-            <ul id="filter">
-                <li class="selected">No filter</li>
-                <li>Filter 1</li>
-                <li>Filter 2</li>
-                <li>Filter 3</li>
-            </ul>
             {{ulist verbs}}
         </aside>
     </body>
