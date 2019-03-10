@@ -17,6 +17,8 @@ const crypto = require("crypto");
 // TODO Figure out how to track login expiration
 // TODO Ensure that username and password meet certain
 //      requirements
+// TODO !! Update user info when they get a verb
+//      wrong/right
 
 // Run tests
 database.run_tests();
@@ -42,19 +44,28 @@ app.get("/:type(js|css|res)/:file", (req, res) => {
     res.sendFile(get_public(req.params.type + "/" + req.params.file));
 });
 
+app.use((req, res, next) => {
+    if (req.headers.cookie) {
+        req.cookies = parse_cookies(req.headers.cookie);
+        if(req.cookies.user_id &&
+            user_db.is_valid_id(req.cookies.user_id))
+            req.user = user_db.username_by_id(req.cookies.user_id);
+        else if(req.cookies.user_id &&
+            !user_db.is_valid_id(req.cookies.user_id))
+            res.setHeader("Set-Cookie", remove_cookie("user_id"));
+    }
+
+    next();
+});
+
 app.get("/", (req, res) => {
     res.sendFile(get_public("index.html"));
 });
 
-app.get("/login|/register", (req, res, next) => {
-    if(req.headers.cookie) {
-        let cookies = parse_cookies(req.headers.cookie);
-        if(cookies.user_id &&
-            user_db.is_valid_id(cookies.user_id))
-            res.redirect("/dashboard");
-        else
-            next();
-    } else
+app.use("/login|/register", (req, res, next) => {
+    if (req.user)
+        res.redirect("/dashboard");
+    else
         next();
 });
 
@@ -66,25 +77,63 @@ app.get("/register", (req, res) => {
     res.sendFile(get_public("register.html"));
 });
 
-app.get("/dashboard|/verbs/.+", (req, res, next) => {
-    if(req.headers.cookie) {
-        let cookies = parse_cookies(req.headers.cookie);
-        if(cookies.user_id &&
-            user_db.is_valid_id(cookies.user_id)) {
-            req.user_id = cookies.user_id;
-            next();
-        } else
-            res.redirect("/login");
-    } else
+app.post("/login", (req, res) => {
+    let { username, password } = req.body;
+    let response = user_db.request({ username, password })
+        .validate(({ username }, db) => db.has_user(username))
+        .validate(({ username, password }, db) => db.match(username, password))
+        .modify_db(({ username, password }, db) => db.login(username, password))
+        .check_db(({ username }, db) => db.is_logged_in(username))
+        .then(({ username }, output, db) => (
+            { user_id: db.get_user_id(username) }
+        ));
+
+    user_db = response.get_db();
+
+    let cookie = generate_cookie("user_id", response.to_json().user_id);
+    res.setHeader("Set-Cookie", cookie);
+
+    res.send(JSON.stringify(response.to_json()));
+});
+
+app.post("/register", (req, res) => {
+    let { username, password } = req.body;
+    let response = user_db.request({ username, password })
+        .validate(({ username }) => username !== "")
+        .validate(({ username }, db) => !db.has_user(username))
+        .modify_db(({ username, password }, db) => {
+            let salt = crypto.randomBytes(16).toString("hex");
+            return db.add_user(username, password, salt)
+                .login(username, password);
+        })
+        .check_db(({ username }, db) => db.is_logged_in(username))
+        .then(({ username }, output, db) => {
+            return {
+                user_id: db.get_user_id(username),
+                ...output
+            }
+        });
+
+    user_db = response.get_db();
+
+    let cookie = generate_cookie("user_id", response.to_json().user_id);
+    res.setHeader("Set-Cookie", cookie);
+
+    res.send(JSON.stringify(response.to_json()));
+});
+
+app.use((req, res, next) => {
+    if (req.user) 
+        next();
+    else
         res.redirect("/login");
 });
 
 app.get("/dashboard", (req, res) => {
-    let username = user_db.username_by_id(req.user_id);
     let file = new template_file.TemplateFile(get_public("dashboard.html"))
-        .variable("username", username)
-        .variable("profile-picture", user_db.get_pic(username))
-        .list("freq-missed", user_db.get_freq_missed(username, 5))
+        .variable("username", req.user)
+        .variable("profile-picture", user_db.get_pic(req.user))
+        .list("freq-missed", user_db.get_freq_missed(req.user, 5))
         .list("verbs", verb_db.verb_list());
     res.send(file.toString());
 });
@@ -96,61 +145,58 @@ app.get("/verbs/manage", (req, res) => {
 });
 
 app.get("/verbs/add", (req, res) => {
-    let file = new template_file.TemplateFile(get_public("add-verbs.html"));
-    res.send(file.toString());
+    res.sendFile(get_public("add-verbs.html"));
 });
 
-app.post("/login", (req, res) => {
-    let { username, password } = req.body;
-    let response = user_db.request({username, password})
-        .validate(({username}, db) => db.has_user(username))
-        .validate(({username, password}, db) => db.match(username, password))
-        .modify_db(({username, password}, db) => db.login(username, password))
-        .check_db(({username}, db) => db.is_logged_in(username))
-        .then(({username}, output, db) => (
-            {user_id: db.get_user_id(username)}
-        ));
-    
-    user_db = response.get_db();
+app.get("/verbs/study/:mode", (req, res) => {
+    let mode = req.params.mode;
+    let { verb, tense } = req.query;
 
-    let cookie = generate_cookie("user_id", response.to_json().user_id);
-    res.setHeader("Set-Cookie", cookie);
-    
-    res.send(JSON.stringify(response.to_json()));
-});
+    switch (mode) {
+        case "all": {
+            if (verb && tense) {
+                if (!verb_db.has(verb, tense)) {
+                    res.redirect("/verbs/study/all");
+                    break;
+                }
 
-app.post("/register", (req, res) => {
-    let { username, password } = req.body;
-    let response = user_db.request({username, password})
-        .validate(({username}, db) => !db.has_user(username))
-        .modify_db(({username, password}, db) => {
-            let salt = crypto.randomBytes(16).toString("hex");
-            return db.add_user(username, password, salt)
-                .login(username, password);
-        })
-        .check_db(({username}, db) => db.is_logged_in(username))
-        .then(({username}, output, db) => {
-            return {
-                user_id: db.get_user_id(username),
-                ...output
+                let file = new template_file.TemplateFile(get_public("study-verb.html"))
+                    .variable("mode", mode)
+                    .variable("verb", verb)
+                    .variable("tense", tense);
+                res.send(file.toString());
+                break;
             }
-        });
-    
-    user_db = response.get_db();
 
-    let cookie = generate_cookie("user_id", response.to_json().user_id);
+            let { verb: new_verb, tense: new_tense } = verb_db.get_random();
+            new_verb = encodeURIComponent(new_verb);
+            new_tense = encodeURIComponent(new_tense);
+            res.redirect("/verbs/study/all?verb=" + new_verb + "&tense=" + new_tense);
+            break;
+        }
+        default:
+            res.redirect("/verbs/study/all");
+            break;
+    }
+});
+
+app.get("/logout", (req, res) => {
+    if (req.user)
+        user_db = user_db.logout(req.user);
+
+    let cookie = remove_cookie("user_id");
     res.setHeader("Set-Cookie", cookie);
-    
-    res.send(JSON.stringify(response.to_json()));
+
+    res.redirect("/login");
 });
 
 app.post("/verbs/manage", (req, res) => {
-    let { del=false, edit=false, ...verbs } = req.body; // 'del' is delete
+    let { del = false, edit = false, ...verbs } = req.body; // 'del' is delete
 
-    if(del) // Delete?
-        for(let verb in verbs)
+    if (del) // Delete?
+        for (let verb in verbs)
             verb_db = verb_db.remove_verb(verb);
-    else if(edit) { // Edit?
+    else if (edit) { // Edit?
     }
 
     res.redirect("/verbs/manage");
@@ -162,27 +208,35 @@ app.post("/verbs/add", (req, res) => {
     res.redirect("/verbs/add");
 });
 
-app.use("/logout", (req, res) => {
-    if(req.headers.cookie) {
-        let cookies = parse_cookies(req.headers.cookie);
-        if(cookies.user_id &&
-            user_db.is_valid_id(cookies.user_id)) {
-            let username = user_db.username_by_id(cookies.user_id);
-            user_db = user_db.logout(username);
-        }
-    }
+app.post("/verbs/study/all", (req, res) => {
+    let { method, verb, tense, ...answers } = req.body;
+    let correct = check_verb(verb, tense, answers, verb_db);
 
-    let cookie = remove_cookie("user_id", "");
-    res.setHeader("Set-Cookie", cookie);
+    let file = new template_file.TemplateFile(get_public("show-results.html"))
+        .variable("mode", "all")
+        .variable("verb", verb)
+        .variable("tense", tense)
+        .variable("je-correct", is_correct(correct.je))
+        .variable("je-answer", answers.je)
+        .variable("tu-correct", is_correct(correct.tu))
+        .variable("tu-answer", answers.tu)
+        .variable("il-correct", is_correct(correct.il))
+        .variable("il-answer", answers.il)
+        .variable("nous-correct", is_correct(correct.nous))
+        .variable("nous-answer", answers.nous)
+        .variable("vous-correct", is_correct(correct.vous))
+        .variable("vous-answer", answers.vous)
+        .variable("ils-correct", is_correct(correct.ils))
+        .variable("ils-answer", answers.ils)
 
-    res.redirect("/login");
+    res.send(file.toString());
 });
 
 app.use((req, res) => {
     res.status(404).sendFile(get_public("404.html"));
 });
 
-app.use((error, req, res, next) => {
+app.use((error, req, res) => {
     console.log(error);
     res.status(500).sendFile(get_public("500.html"));
 });
@@ -209,12 +263,12 @@ function generate_cookie(name, value) {
         "; HttpOnly";
 }
 
-function remove_cookie(name, value) {
+function remove_cookie(name) {
     // Set the expiration date to a date that has passed
     // in order to remove the cookie
     let expire = new Date(Date.now() - 60000);
 
-    return name + "=" + value +
+    return name + "=" + "" +
         "; expires=" + expire.toUTCString() +
         "; path=/" +
         "; HttpOnly";
@@ -223,25 +277,39 @@ function remove_cookie(name, value) {
 function verb_from(req_body) {
     // Extract the tenses
     let tenses = [];
-    
-    for(let val in req_body)
-        if(/tense-\d+/.test(val)) { // If the key matches 'tense-#'
+
+    for (let val in req_body)
+        if (/tense-\d+/.test(val)) { // If the key matches 'tense-#'
             let i = /\d+/.exec(val)[0]; // Get the number
             tenses.push({
-                tense: req_body["tense-"+i],
-                je: req_body["je-"+i],
-                tu: req_body["tu-"+i],
-                il: req_body["il-"+i],
-                nous: req_body["nous-"+i],
-                vous: req_body["vous-"+i],
-                ils: req_body["ils-"+i]
+                tense: req_body["tense-" + i],
+                je: req_body["je-" + i],
+                tu: req_body["tu-" + i],
+                il: req_body["il-" + i],
+                nous: req_body["nous-" + i],
+                vous: req_body["vous-" + i],
+                ils: req_body["ils-" + i]
             });
         }
-    
+
     return {
         infinitive: req_body.infinitive,
         tenses
     };
+}
+
+function check_verb(verb, tense, answers, verb_db) {
+    let conj = verb_db.get_conj(verb, tense);
+    let correct = {};
+
+    for (let pronoun in conj)
+        correct.all_correct &= correct[pronoun] = answers[pronoun] === conj[pronoun];
+
+    return correct;
+}
+
+function is_correct(correct) {
+    return (correct) ? "correct" : "incorrect";
 }
 
 function get_public(loc) {

@@ -2,23 +2,25 @@
 <html>
     <head>
         <title>Dashboard | Meuglé</title>
+		<meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="/css/normalize.css"></link>
     </head>
     <body>
         <header>
             <img src="/res/long-logo.png" alt="Meuglé" />
         </header>
         <main id="dashboard">
-            <header >
+            <header>
                 <img src="res/{{profile-picture}}" alt="Profile Picture" />
                 <h2>{{username}}</h2>
                 <a href="/logout">Logout</a>
             </header>
             <section id="options">
                 <nav>
-                    <a href="#">Study All Verbs</a>
-                    <a href="#">Study Frequently Missed</a>
-                    <a href="#">Custom Study</a>
-                    <a href="#">My Groups</a>
+                    <a href="/verbs/study/all">Study All Verbs</a>
+                    <a href="/verbs/study/freq">Study Frequently Missed</a>
+                    <a href="/verbs/study/custom">Custom Study</a>
+                    <a href="/verbs/groups">My Groups</a>
                 </nav>
             </section>
             <section id="frequently-missed">

@@ -111,6 +111,78 @@ class UserDB {
         return this;
     }
 
+    // correct(username, verb, tense) {
+    //     let user = this.users
+    //         .find(user => user.username === username);
+        
+    //     if(user && user.verb_practice
+    //         .some(v => v.infinitive === verb &&
+    //             v.tenses.some(t => t.tense === tense))) {
+    //                 let t = user.verb_practice
+    //                     .find(v => v.infinitive === verb)
+    //                     .tenses.find(t => t.tense === tense);
+    //                 t.correct = t.correct + 1;
+    //             }
+    //     else if(user && user.verb_practice
+    //         .some(v => v.infinitive === verb)) {
+    //             let v = user.verb_practice
+    //                 .find(v => v.infinitive === verb);
+    //             v.tenses.push({
+    //                 tense,
+    //                 correct: 1,
+    //                 incorrect: 0
+    //             });
+    //         }
+    //     else if(user) {
+    //         user.verb_practice.push({
+    //             infinitive: verb,
+    //             tenses: [{
+    //                 tense,
+    //                 correct: 1,
+    //                 incorrect: 0
+    //             }]
+    //         });
+    //     }
+
+    //     return this;
+    // }
+
+    // incorrect(username, verb, tense) {
+    //     let user = this.users
+    //         .find(user => user.username === username);
+        
+    //     if(user && user.verb_practice
+    //         .some(v => v.infinitive === verb &&
+    //             v.tenses.some(t => t.tense === tense))) {
+    //                 let t = user.verb_practice
+    //                     .find(v => v.infinitive === verb)
+    //                     .tenses.find(t => t.tense === tense);
+    //                 t.incorrect = t.incorrect + 1;
+    //             }
+    //     else if(user && user.verb_practice
+    //         .some(v => v.infinitive === verb)) {
+    //             let v = user.verb_practice
+    //                 .find(v => v.infinitive === verb);
+    //             v.tenses.push({
+    //                 tense,
+    //                 correct: 0,
+    //                 incorrect: 1
+    //             });
+    //         }
+    //     else if(user) {
+    //         user.verb_practice.push({
+    //             infinitive: verb,
+    //             tenses: [{
+    //                 tense,
+    //                 correct: 0,
+    //                 incorrect: 1
+    //             }]
+    //         });
+    //     }
+
+    //     return this;
+    // }
+
     save() {
         if(this.modified) {
             fs.writeJSONSync(this.location, this.users, { spaces: "\t"});
@@ -330,6 +402,56 @@ function run_tests() {
 
             for(var i = 0; i < expected.length; i++)
                 assert_eq(expected[i], freq_missed[i]);
+        }))
+    
+    .add_test(Test.builder()
+        .name("Test Correct/Incorrect Marking")
+        
+        .description(
+            "Ensure that verbs are marked " +
+            "correctly when user gets a verb " +
+            "right or wrong"
+        )
+
+        .ignore()
+        
+        .test(() => {
+            let normal = (new UserDB(normal_loc))
+                .correct("user1", "verb1", "past")
+                .incorrect("user1", "verb1", "past imperfect");
+
+                let freq_missed = normal.get_freq_missed("user_1");
+                let expected = [
+                    {
+                        infinitive: "verb2",
+                        tense: "present",
+                        correct: 0,
+                        incorrect: 2
+                    },
+                    {
+                        infinitive: "verb1",
+                        tense: "past imperfect",
+                        correct: 1,
+                        incorrect: 2
+                    },
+                    {
+                        infinitive: "verb1",
+                        tense: "past",
+                        correct: 1,
+                        incorrect: 1
+                    },
+                    {
+                        infinitive: "verb1",
+                        tense: "present",
+                        correct: 1,
+                        incorrect: 0
+                    },
+                ];
+
+                console.log(expected);
+                console.log(freq_missed);
+
+                assert_eq(expected, freq_missed);
         }))
     
     .build();

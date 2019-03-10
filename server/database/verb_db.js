@@ -28,6 +28,30 @@ class VerbDB {
         return this;
     }
 
+    has(verb, tense = undefined) {
+        return this.verbs.some(v => v.infinitive === verb) &&
+            (tense === undefined ||
+                this.verbs.some(v => v.tenses.some(t => t.tense === tense)));
+    }
+
+    get_random(seed) {
+        seed = seed || Math.random();
+        let verbs = this.verbs
+            .map(v => v.tenses.map(
+                t => ({tense: t.tense, verb: v.infinitive})
+            ))
+            .reduce((prev, curr) => [...prev, ...curr]);
+        let loc = Math.floor(seed * verbs.length);
+        return verbs[loc];
+    }
+
+    get_conj(verb, tense) {
+        let { tense: _, ...conj } = this.verbs
+            .find(v => v.infinitive === verb)
+            .tenses.find(t => t.tense === tense);
+        return conj;
+    }
+
     save() {
         if(this.modified) {
             fs.writeJSONSync(this.location, this.verbs, { spaces: "\t"});
@@ -67,6 +91,29 @@ function run_tests() {
                     nous: "nous1",
                     vous: "vous1",
                     ils: "ils1"
+                },
+                {
+                    tense: "past",
+                    je: "je2",
+                    tu: "tu2",
+                    il: "il2",
+                    nous: "nous2",
+                    vous: "vous2",
+                    ils: "ils2"
+                }
+            ]
+        },
+        {
+            infinitive: "verb2",
+            tenses: [
+                {
+                    tense: "present",
+                    je: "je3",
+                    tu: "tu3",
+                    il: "il3",
+                    nous: "nous3",
+                    vous: "vous3",
+                    ils: "ils3"
                 }
             ]
         }
@@ -87,7 +134,7 @@ function run_tests() {
         
         .test(() => {
             let verb_db = new VerbDB(db_loc);
-            let expected = ["verb1"];
+            let expected = ["verb1", "verb2"];
             assert_eq(expected, verb_db.verb_list());
         }))
     
@@ -101,11 +148,11 @@ function run_tests() {
         
         .test(() => {
             let verb_db = new VerbDB(db_loc);
-            let expected = ["verb1"];
+            let expected = ["verb1", "verb2"];
             assert_eq(expected, verb_db.verb_list());
 
             verb_db = verb_db.add_verb({
-                infinitive: "verb2",
+                infinitive: "verb3",
                 tenses: [{
                     tense: "present",
                     je: "a",
@@ -116,12 +163,85 @@ function run_tests() {
                     ils: "f"
                 }]
             });
-            expected.push("verb2");
+            expected.push("verb3");
             assert_eq(expected, verb_db.verb_list());
 
-            verb_db = verb_db.remove_verb("verb2");
-            expected = expected.filter(verb => verb !== "verb2");
+            verb_db = verb_db.remove_verb("verb3");
+            expected = expected.filter(verb => verb !== "verb3");
             assert_eq(expected, verb_db.verb_list());
+        }))
+    
+    .add_test(Test.builder()
+        .name("Test DB Has Verb")
+        
+        .description(
+            "Test that the verb knows that " +
+            "it has a verb and/or tense"
+        )
+        
+        .test(() => {
+            let verb_db = new VerbDB(db_loc);
+
+            assert(verb_db.has("verb1"));
+            assert(verb_db.has("verb1", "present"));
+            assert(!verb_db.has("non-existent"));
+            assert(!verb_db.has("verb1", "non-existent"));
+        }))
+    
+    .add_test(Test.builder()
+        .name("Test Random Verb")
+        
+        .description(
+            "Test that the random verb " +
+            "generator isn't actually random..."
+        )
+        
+        .test(() => {
+            let verb_db = new VerbDB(db_loc);
+
+            let seed = 0.332;
+            let expected = {
+                verb: "verb1",
+                tense: "present"
+            };
+            assert_eq(expected, verb_db.get_random(seed));
+
+            seed = 0.665;
+            expected = {
+                verb: "verb1",
+                tense: "past"
+            };
+            assert_eq(expected, verb_db.get_random(seed));
+
+            seed = 0.999;
+            expected = {
+                verb: "verb2",
+                tense: "present"
+            };
+            assert_eq(expected, verb_db.get_random(seed));
+        }))
+    
+    .add_test(Test.builder()
+        .name("Test Verb Conjugation")
+        
+        .description(
+            "Ensure the the database correctly " +
+            "returns the conjugations for verbs"
+        )
+        
+        .test(() => {
+            let verb_db = new VerbDB(db_loc);
+            let result = verb_db.get_conj("verb1", "present");
+            let expected = {
+                je: "je1",
+                tu: "tu1",
+                il: "il1",
+                nous: "nous1",
+                vous: "vous1",
+                ils: "ils1"
+            };
+
+            assert_eq(expected, result);
         }))
     
     .build();
@@ -133,3 +253,5 @@ try {
     module.exports.run_tests = exports.run_tests = run_tests;
     module.exports.VerbDB = exports.VerbDB = VerbDB;
 } catch(error) {}
+
+run_tests();

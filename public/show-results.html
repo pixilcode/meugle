@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>&laquo;{{verb}}&raquo; | Meuglé</title>
+		<meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="/css/normalize.css"></link>
+    </head>
+    <body>
+        <header>
+            <img src="/res/long-logo.png" alt="Meuglé" />
+        </header>
+        <main>
+            <h2>{{verb}}</h2>
+            <h3>{{tense}}</h3>
+            <form method="POST">
+                <fieldset disabled>
+                    <label for="je">Je:</label>
+                    <input type="text" name="je" id="je" class="{{je-correct}}" value="{{je-answer}}" />
+
+                    <label for="tu">Tu:</label>
+                    <input type="text" name="tu" id="tu" class="{{tu-correct}}" value="{{tu-answer}}"/>
+
+                    <label for="il">Il:</label>
+                    <input type="text" name="il" id="il" class="{{il-correct}}" value="{{il-answer}}"/>
+
+                    <label for="nous">Nous:</label>
+                    <input type="text" name="nous" id="nous" class="{{nous-correct}}" value="{{nous-answer}}"/>
+
+                    <label for="vous">Vous:</label>
+                    <input type="text" name="vous" id="vous" class="{{vous-correct}}" value="{{vous-answer}}"/>
+
+                    <label for="ils">Ils:</label>
+                    <input type="text" name="ils" id="ils" class="{{ils-correct}}" value="{{ils-answer}}"/>
+                </fieldset>
+            </form>
+            <a href="/dashboard">Home</a>
+            <a id="next" href="/verbs/study/{{mode}}">Next</a>
+            <script>
+                document.getElementById("next").focus();
+            </script>
+        </main>
+    </body>
+</html>
