@@ -4,6 +4,7 @@ const database = require("./database/database");
 const template_file = require("./template_file");
 const body_parser = require("body-parser");
 const crypto = require("crypto");
+const favicon = require("serve-favicon");
 
 // TODO Create admin privileges
 // TODO Use as little client-side JS as possible
@@ -41,8 +42,10 @@ app.listen(port, () => console.log("Listening on port 8080..."));
 app.use(body_parser.json());
 app.use(body_parser.urlencoded({ extended: true }));
 app.get("/:type(js|css|res)/:file", (req, res) => {
-    res.sendFile(get_public(req.params.type + "/" + req.params.file));
+    res.sendFile(get_public(path.join(req.params.type, req.params.file)));
 });
+
+app.use(favicon(get_public(path.join("res", "favicon.png"))));
 
 app.use((req, res, next) => {
     if (req.headers.cookie) {
