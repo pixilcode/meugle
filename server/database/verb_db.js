@@ -6,7 +6,10 @@ class VerbDB {
         this.modified = false;
 
         try {
-            this.verbs = fs.readJSONSync(location);
+            let verbs = fs.readJSONSync(location);
+            this.verbs = verbs.map(verb =>
+                verb.tenses.reduce((v, tense) => v.tense(tense), new Verb(verb.infinitive))
+            );
         } catch (error) {
             this.verbs = [];
         }
@@ -61,6 +64,37 @@ class VerbDB {
 
     request(input) {
         return new db_req.DBRequest(input, this);
+    }
+}
+
+class Verb {
+    constructor(infinitive) {
+        this.infinitive = infinitive;
+        this.tenses = [];
+    }
+
+    tense(tense) {
+        this.tenses.push(new VerbTense(
+            tense.tense,
+            tense.je,
+            tense.tu,
+            tense.il,
+            tense.nous,
+            tense.vous,
+            tense.ils));
+        return this;
+    }
+}
+
+class VerbTense {
+    constructor(tense, je, tu, il, nous, vous, ils) {
+        this.tense = tense;
+        this.je = je;
+        this.tu = tu;
+        this.il = il;
+        this.nous = nous;
+        this.vous = vous;
+        this.ils = ils;
     }
 }
 
@@ -253,3 +287,5 @@ try {
     module.exports.run_tests = exports.run_tests = run_tests;
     module.exports.VerbDB = exports.VerbDB = VerbDB;
 } catch (error) { }
+
+run_tests();

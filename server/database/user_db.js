@@ -489,5 +489,3 @@ try {
     module.UserDB = exports.UserDB = UserDB;
     module.generate_salt = exports.generate_salt = generate_salt;
 } catch (error) { }
-
-run_tests();
