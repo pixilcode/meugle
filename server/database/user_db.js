@@ -9,8 +9,9 @@ class UserDB {
         this.modified = false;
 
         try {
-            this.users = fs.readJSONSync(location);
-        } catch(error) {
+            let users = fs.readJSONSync(location);
+            this.users = users.map(user => User.from_json(user));
+        } catch (error) {
             this.users = [];
         }
     }
@@ -28,15 +29,7 @@ class UserDB {
 
     add_user(username, password, salt) {
         this.modified = true;
-
-        this.users.push({
-            username: username,
-            password_hash: hash_password(password, salt),
-            salt: salt,
-            profile_pic: "default.png",
-            verb_practice: [],
-            custom_sets: []
-        });
+        this.users.push(new User(username, password, salt));
 
         return this;
     }
@@ -48,10 +41,10 @@ class UserDB {
     login(username, password) {
         this.modified = true;
 
-        if(this.match(username, password) && !this.is_logged_in(username)) {
+        if (this.match(username, password) && !this.is_logged_in(username)) {
             let user_id;
             do user_id = crypto.randomBytes(16).toString("hex");
-            while(this.logged_in.some(user => user.user_id === user_id));
+            while (this.logged_in.some(user => user.user_id === user_id));
             this.logged_in.push({
                 username: username,
                 user_id: user_id
@@ -63,34 +56,35 @@ class UserDB {
 
     get_user_id(username) {
         let user = this.logged_in.find(user => user.username === username);
-        if(user) return user.user_id;
+        if (user) return user.user_id;
         else return undefined;
     }
 
     get_pic(username) {
         let user = this.users.find(user => user.username === username);
-        if(user) return user.profile_pic;
+        if (user) return user.profile_pic;
         else return "default.png";
     }
 
     get_freq_missed(username, max = -1) {
         let user = this.users.find(user => user.username === username);
+        if (user === undefined) return [];
         let verbs = user.verb_practice
-        .map(verb => {
-            let infinitive = verb.infinitive;
-            return verb.tenses.map(tense => ({infinitive, ...tense}));
-        })
-        .reduce((prev, current) => [...prev, ...current], [])
-        .sort((a, b) => {
-            if(a.incorrect !== b.incorrect) // If one has more incorrect than the other
-                return b.incorrect - a.incorrect; // The one with greater incorrect goes first
-            // Otherwise, the one with the greater percent incorrect goes first
-            let percent_incorrect_a = a.incorrect / (a.correct + a.incorrect);
-            let percent_incorrect_b = b.incorrect / (b.correct + b.incorrect);
-            return percent_incorrect_b - percent_incorrect_a;
-        });
+            .map(verb => {
+                let infinitive = verb.infinitive;
+                return verb.tenses.map(tense => ({ infinitive, ...tense }));
+            })
+            .reduce((prev, current) => [...prev, ...current], [])
+            .sort((a, b) => {
+                if (a.incorrect !== b.incorrect) // If one has more incorrect than the other
+                    return b.incorrect - a.incorrect; // The one with greater incorrect goes first
+                // Otherwise, the one with the greater percent incorrect goes first
+                let percent_incorrect_a = a.incorrect / (a.correct + a.incorrect);
+                let percent_incorrect_b = b.incorrect / (b.correct + b.incorrect);
+                return percent_incorrect_b - percent_incorrect_a;
+            });
 
-        if(max < 0)
+        if (max < 0)
             return verbs;
         else
             return verbs.slice(0, max);
@@ -104,6 +98,22 @@ class UserDB {
         return this.logged_in.find(user => user.user_id === id).username;
     }
 
+    correct(user, verb, tense) {
+        this.modified = true;
+
+        this.users = this.users.map(u =>
+            (u.username === user) ? u.correct(verb, tense) : u);
+        return this;
+    }
+
+    incorrect(user, verb, tense) {
+        this.modified = true;
+
+        this.users = this.users.map(u =>
+            (u.username === user) ? u.incorrect(verb, tense) : u);
+        return this;
+    }
+
     logout(username) {
         this.modified = true;
 
@@ -111,87 +121,104 @@ class UserDB {
         return this;
     }
 
-    // correct(username, verb, tense) {
-    //     let user = this.users
-    //         .find(user => user.username === username);
-        
-    //     if(user && user.verb_practice
-    //         .some(v => v.infinitive === verb &&
-    //             v.tenses.some(t => t.tense === tense))) {
-    //                 let t = user.verb_practice
-    //                     .find(v => v.infinitive === verb)
-    //                     .tenses.find(t => t.tense === tense);
-    //                 t.correct = t.correct + 1;
-    //             }
-    //     else if(user && user.verb_practice
-    //         .some(v => v.infinitive === verb)) {
-    //             let v = user.verb_practice
-    //                 .find(v => v.infinitive === verb);
-    //             v.tenses.push({
-    //                 tense,
-    //                 correct: 1,
-    //                 incorrect: 0
-    //             });
-    //         }
-    //     else if(user) {
-    //         user.verb_practice.push({
-    //             infinitive: verb,
-    //             tenses: [{
-    //                 tense,
-    //                 correct: 1,
-    //                 incorrect: 0
-    //             }]
-    //         });
-    //     }
-
-    //     return this;
-    // }
-
-    // incorrect(username, verb, tense) {
-    //     let user = this.users
-    //         .find(user => user.username === username);
-        
-    //     if(user && user.verb_practice
-    //         .some(v => v.infinitive === verb &&
-    //             v.tenses.some(t => t.tense === tense))) {
-    //                 let t = user.verb_practice
-    //                     .find(v => v.infinitive === verb)
-    //                     .tenses.find(t => t.tense === tense);
-    //                 t.incorrect = t.incorrect + 1;
-    //             }
-    //     else if(user && user.verb_practice
-    //         .some(v => v.infinitive === verb)) {
-    //             let v = user.verb_practice
-    //                 .find(v => v.infinitive === verb);
-    //             v.tenses.push({
-    //                 tense,
-    //                 correct: 0,
-    //                 incorrect: 1
-    //             });
-    //         }
-    //     else if(user) {
-    //         user.verb_practice.push({
-    //             infinitive: verb,
-    //             tenses: [{
-    //                 tense,
-    //                 correct: 0,
-    //                 incorrect: 1
-    //             }]
-    //         });
-    //     }
-
-    //     return this;
-    // }
-
     save() {
-        if(this.modified) {
-            fs.writeJSONSync(this.location, this.users, { spaces: "\t"});
+        if (this.modified) {
+            fs.writeJSONSync(this.location, this.users, { spaces: "\t" });
             this.modified = false;
         }
     }
 
     request(input) {
         return new db_req.DBRequest(input, this);
+    }
+}
+
+class User {
+    constructor(username, password, salt) {
+        this.username = username;
+        this.password_hash = hash_password(password, salt);
+        this.salt = salt;
+        this.profile_pic = "default.png";
+        this.verb_practice = [];
+        this.custom_sets = [];
+    }
+
+    correct(verb, tense) {
+        this.verb_practice = this.verb_practice.map(v =>
+            (v.infinitive === verb) ? v.correct(tense) : v);
+        return this;
+    }
+
+    incorrect(verb, tense) {
+        this.verb_practice = this.verb_practice.map(v =>
+            (v.infinitive === verb) ? v.incorrect(tense) : v);
+        return this;
+    }
+
+    static from_json(user) {
+        let obj = new User(user.username, "", user.salt);
+        obj.password_hash = user.password_hash;
+        obj.profile_pic = user.profile_pic;
+        obj.custom_sets = user.custom_sets;
+
+        let verb_practice = user.verb_practice.map(verb => VerbInfo.from_json(verb));
+        obj.verb_practice = verb_practice;
+
+        return obj;
+    }
+}
+
+class VerbInfo {
+    constructor(infinitive) {
+        this.infinitive = infinitive;
+        this.tenses = [];
+    }
+
+    correct(tense) {
+        this.tenses = this.tenses.map(t =>
+            (t.tense === tense) ? t.mark_correct() : t);
+        return this;
+    }
+
+    incorrect(tense) {
+        this.tenses = this.tenses.map(t =>
+            (t.tense === tense) ? t.mark_incorrect() : t);
+        return this;
+    }
+
+    static from_json(verb) {
+        let obj = new VerbInfo(verb.infinitive);
+
+        let tenses = verb.tenses.map(tense => VerbTense.from_json(tense));
+        obj.tenses = tenses;
+
+        return obj;
+    }
+}
+
+class VerbTense {
+    constructor(tense) {
+        this.tense = tense;
+        this.correct = 0;
+        this.incorrect = 0;
+    }
+
+    mark_correct() {
+        this.correct = this.correct + 1;
+        return this;
+    }
+
+    mark_incorrect() {
+        this.incorrect = this.incorrect + 1;
+        return this;
+    }
+
+    static from_json(tense) {
+        let obj = new VerbTense(tense.tense);
+        obj.correct = tense.correct;
+        obj.incorrect = tense.incorrect;
+
+        return obj;
     }
 }
 
@@ -268,157 +295,155 @@ function run_tests() {
         }]);
 
     let suite = TestSuite.builder()
-    .name("User Database Tests")
+        .name("User Database Tests")
 
-    .description("Test that each database function works")
+        .description("Test that each database function works")
 
-    .add_test(Test.builder()
-        .name("Has User Test")
-        
-        .description(
-            "Test that the database knows " +
-            "if it has a user")
-        
-        .test(() => {
-            let normal = new UserDB(normal_loc);
-            
-            assert(normal.has_user("user_1"), "Database does not have 'user_1'");
-            assert(!normal.has_user("user_2"), "Database has 'user_2'");
-        }))
-    
-    .add_test(Test.builder()
-        .name("Match User to Passwd Test")
-        
-        .description(
-            "Test that the database can " +
-            "match username to password"
-        )
-        
-        .test(() => {
-            let normal = new UserDB(normal_loc);
-            
-            assert(normal.match("user_1", "p@$$w0rd"), "Password did not match username");
-            assert(!normal.match("user_1", "password"), "Password matched username");
-        }))
-    
-    .add_test(Test.builder()
-        .name("Create User Test")
-        
-        .description(
-            "Ensure that the database can " +
-            "add a user"
-        )
-        
-        .test(() => {
-            let normal = new UserDB(normal_loc);
-            
-            assert(!normal.has_user("james_doe"), "User DB shouldn't have 'james_doe'");
-            
-            normal = normal.add_user("james_doe", "mynameisjames");
-            
-            assert(normal.match("james_doe", "mynameisjames"), "User DB does not have correct info");
-        }))
-    
-    .add_test(Test.builder()
-        .name("Login Test")
-        
-        .description(
-            "Ensure that the login system " +
-            "works correctly"
-        )
-        
-        .test(() => {
-            let normal = new UserDB(normal_loc);
-            
-            assert(!normal.is_logged_in("user_1"), "User 1 should not be logged in");
+        .add_test(Test.builder()
+            .name("Has User Test")
 
-            normal = normal.login("user_1", "p@$$w0rd");
+            .description(
+                "Test that the database knows " +
+                "if it has a user")
 
-            assert(normal.is_logged_in("user_1"));
-            assert_neq(normal.get_user_id("user_1"), undefined);
+            .test(() => {
+                let normal = new UserDB(normal_loc);
 
-            normal = normal.logout("user_1");
+                assert(normal.has_user("user_1"), "Database does not have 'user_1'");
+                assert(!normal.has_user("user_2"), "Database has 'user_2'");
+            }))
 
-            assert(!normal.is_logged_in("user_1"));
-            assert_eq(normal.get_user_id("user_1"), undefined);
-        }))
+        .add_test(Test.builder()
+            .name("Match User to Passwd Test")
 
-    .add_test(Test.builder()
-        .name("Test User ID")
-        
-        .description(
-            "Ensure all functions dealing with " +
-            "user_id work"
-        )
-        
-        .test(() => {
-            let normal = new UserDB(normal_loc);
-            normal = normal.login("user_1", "p@$$w0rd");
+            .description(
+                "Test that the database can " +
+                "match username to password"
+            )
 
-            let user_id = normal.get_user_id("user_1");
-            assert(normal.is_valid_id(user_id), "User ID is invalid");
-            assert_eq("user_1", normal.username_by_id(user_id));
-        }))
-    
-    .add_test(Test.builder()
-        .name("Test User Access")
-        
-        .description(
-            "Ensure that the UserDB returns the " +
-            "user data"
-        )
-        
-        .test(() => {
-            let normal = new UserDB(normal_loc);
-            assert_eq("default.png", normal.get_pic("user_1"));
+            .test(() => {
+                let normal = new UserDB(normal_loc);
 
-            let freq_missed = normal.get_freq_missed("user_1");
-            let expected = [
-                {
-                    infinitive: "verb2",
-                    tense: "present",
-                    correct: 0,
-                    incorrect: 2
-                },
-                {
-                    infinitive: "verb1",
-                    tense: "past",
-                    correct: 0,
-                    incorrect: 1
-                },
-                {
-                    infinitive: "verb1",
-                    tense: "past imperfect",
-                    correct: 1,
-                    incorrect: 1
-                },
-                {
-                    infinitive: "verb1",
-                    tense: "present",
-                    correct: 1,
-                    incorrect: 0
-                },
-            ];
+                assert(normal.match("user_1", "p@$$w0rd"), "Password did not match username");
+                assert(!normal.match("user_1", "password"), "Password matched username");
+            }))
 
-            for(var i = 0; i < expected.length; i++)
-                assert_eq(expected[i], freq_missed[i]);
-        }))
-    
-    .add_test(Test.builder()
-        .name("Test Correct/Incorrect Marking")
-        
-        .description(
-            "Ensure that verbs are marked " +
-            "correctly when user gets a verb " +
-            "right or wrong"
-        )
+        .add_test(Test.builder()
+            .name("Create User Test")
 
-        .ignore()
-        
-        .test(() => {
-            let normal = (new UserDB(normal_loc))
-                .correct("user1", "verb1", "past")
-                .incorrect("user1", "verb1", "past imperfect");
+            .description(
+                "Ensure that the database can " +
+                "add a user"
+            )
+
+            .test(() => {
+                let normal = new UserDB(normal_loc);
+
+                assert(!normal.has_user("james_doe"), "User DB shouldn't have 'james_doe'");
+
+                normal = normal.add_user("james_doe", "mynameisjames");
+
+                assert(normal.match("james_doe", "mynameisjames"), "User DB does not have correct info");
+            }))
+
+        .add_test(Test.builder()
+            .name("Login Test")
+
+            .description(
+                "Ensure that the login system " +
+                "works correctly"
+            )
+
+            .test(() => {
+                let normal = new UserDB(normal_loc);
+
+                assert(!normal.is_logged_in("user_1"), "User 1 should not be logged in");
+
+                normal = normal.login("user_1", "p@$$w0rd");
+
+                assert(normal.is_logged_in("user_1"));
+                assert_neq(normal.get_user_id("user_1"), undefined);
+
+                normal = normal.logout("user_1");
+
+                assert(!normal.is_logged_in("user_1"));
+                assert_eq(normal.get_user_id("user_1"), undefined);
+            }))
+
+        .add_test(Test.builder()
+            .name("Test User ID")
+
+            .description(
+                "Ensure all functions dealing with " +
+                "user_id work"
+            )
+
+            .test(() => {
+                let normal = new UserDB(normal_loc);
+                normal = normal.login("user_1", "p@$$w0rd");
+
+                let user_id = normal.get_user_id("user_1");
+                assert(normal.is_valid_id(user_id), "User ID is invalid");
+                assert_eq("user_1", normal.username_by_id(user_id));
+            }))
+
+        .add_test(Test.builder()
+            .name("Test User Access")
+
+            .description(
+                "Ensure that the UserDB returns the " +
+                "user data"
+            )
+
+            .test(() => {
+                let normal = new UserDB(normal_loc);
+                assert_eq("default.png", normal.get_pic("user_1"));
+
+                let freq_missed = normal.get_freq_missed("user_1");
+                let expected = [
+                    {
+                        infinitive: "verb2",
+                        tense: "present",
+                        correct: 0,
+                        incorrect: 2
+                    },
+                    {
+                        infinitive: "verb1",
+                        tense: "past",
+                        correct: 0,
+                        incorrect: 1
+                    },
+                    {
+                        infinitive: "verb1",
+                        tense: "past imperfect",
+                        correct: 1,
+                        incorrect: 1
+                    },
+                    {
+                        infinitive: "verb1",
+                        tense: "present",
+                        correct: 1,
+                        incorrect: 0
+                    },
+                ];
+
+                for (var i = 0; i < expected.length; i++)
+                    assert_eq(expected[i], freq_missed[i]);
+            }))
+
+        .add_test(Test.builder()
+            .name("Test Correct/Incorrect Marking")
+
+            .description(
+                "Ensure that verbs are marked " +
+                "correctly when user gets a verb " +
+                "right or wrong"
+            )
+
+            .test(() => {
+                let normal = (new UserDB(normal_loc))
+                    .correct("user_1", "verb1", "past")
+                    .incorrect("user_1", "verb1", "past imperfect");
 
                 let freq_missed = normal.get_freq_missed("user_1");
                 let expected = [
@@ -448,14 +473,11 @@ function run_tests() {
                     },
                 ];
 
-                console.log(expected);
-                console.log(freq_missed);
-
                 assert_eq(expected, freq_missed);
-        }))
-    
-    .build();
-    
+            }))
+
+        .build();
+
     TestSuite.run(suite).print_result();
 
     fs.removeSync(temp_dir);
@@ -466,4 +488,6 @@ try {
     module.exports.run_tests = exports.run_tests = run_tests;
     module.UserDB = exports.UserDB = UserDB;
     module.generate_salt = exports.generate_salt = generate_salt;
-} catch(error) {}
+} catch (error) { }
+
+run_tests();

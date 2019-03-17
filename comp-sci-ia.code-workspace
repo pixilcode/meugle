@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "server"
+		},
+		{
+			"path": "public"
+		}
+	],
+	"settings": {
+		"editor.accessibilitySupport": "off",
+		"editor.insertSpaces": false,
+		"editor.scrollBeyondLastLine": false,
+		"editor.formatOnSave": true
+	}
+}

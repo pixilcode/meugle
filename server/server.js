@@ -50,10 +50,10 @@ app.use(favicon(get_public(path.join("res", "favicon.png"))));
 app.use((req, res, next) => {
     if (req.headers.cookie) {
         req.cookies = parse_cookies(req.headers.cookie);
-        if(req.cookies.user_id &&
+        if (req.cookies.user_id &&
             user_db.is_valid_id(req.cookies.user_id))
             req.user = user_db.username_by_id(req.cookies.user_id);
-        else if(req.cookies.user_id &&
+        else if (req.cookies.user_id &&
             !user_db.is_valid_id(req.cookies.user_id))
             res.setHeader("Set-Cookie", remove_cookie("user_id"));
     }
@@ -126,7 +126,7 @@ app.post("/register", (req, res) => {
 });
 
 app.use((req, res, next) => {
-    if (req.user) 
+    if (req.user)
         next();
     else
         res.redirect("/login");
@@ -214,6 +214,11 @@ app.post("/verbs/add", (req, res) => {
 app.post("/verbs/study/all", (req, res) => {
     let { method, verb, tense, ...answers } = req.body;
     let correct = check_verb(verb, tense, answers, verb_db);
+
+    if (correct.all_correct)
+        user_db = user_db.correct(req.user, verb, tense);
+    else
+        user_db = user_db.incorrect(req.user, verb, tense);
 
     let file = new template_file.TemplateFile(get_public("show-results.html"))
         .variable("mode", "all")
