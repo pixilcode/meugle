@@ -1,23 +1,37 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Add Verbs | Meuglé</title>
-		<meta charset="UTF-8">
-        <link rel="stylesheet" type="text/css" href="/css/reset.css"></link>
-        <script src="/js/add-verbs.js"></script>
-    </head>
-    <body>
-        <header>
-            <img src="/res/long-logo.png" alt="Meuglé" />
-        </header>
-        <main>
-            <a href="/dashboard">Home</a>
-            <h2>Add a Verb</h2>
-            <form id="verb-form" method="POST">
-                <label>Infinitive: <input type="text" name="infinitive" /></label>
-                <input type="button" value="New Tense" onclick="new_tense()" />
-                <input type="submit" value="Add Verb"/>
-            </form>
-        </main>
-    </body>
+
+<head>
+    <title>Add Verbs | Meuglé</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="/css/reset.css">
+    </link>
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+    </link>
+    <script src="/js/add-verbs.js"></script>
+</head>
+
+<body>
+    <header>
+        <img src="/res/long-logo.png" alt="Meuglé" />
+    </header>
+    <main>
+        <a href="/dashboard">Home</a>
+        <h2>Add a Verb</h2>
+        <form id="verb-form" method="POST">
+            <label>Infinitive: <input type="text" name="infinitive" /></label>
+            <input type="button" value="New Tense" onclick="new_tense()" />
+            <input type="submit" value="Add Verb" />
+        </form>
+    </main>
+    <aside id="verb-list">
+        <h2>List of Verbs</h2>
+        <a href="/verbs/manage">Manage Verbs</a>
+        <input type="search" placeholder="Search" />
+        <input type="search" placeholder="Search" oninput="search()" />
+        {{ulist verbs}}
+        <script src="/js/search.js"></script>
+    </aside>
+</body>
+
 </html>

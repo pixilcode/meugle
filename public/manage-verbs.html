@@ -1,23 +1,37 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Manage Verbs | Meuglé</title>
-		<meta charset="UTF-8">
-        <link rel="stylesheet" type="text/css" href="/css/reset.css"></link>
-    </head>
-    <body>
-        <header>
-            <img src="/res/long-logo.png" alt="Meuglé" />
-        </header>
-        <main>
-            <a href="/dashboard">Home</a>
-            <h2>Verb List</h2>
-            <a href="/verbs/add">Add a Verb</a>
-            <form method="post">
-                <button name="del" value="true">Delete</button>
-                <button name="edit" value="true">Edit</button>
-                {{checklist verbs}}
-            </form>
-        </main>
-    </body>
+
+<head>
+    <title>Manage Verbs | Meuglé</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="/css/reset.css">
+    </link>
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+    </link>
+</head>
+
+<body>
+    <header>
+        <img src="/res/long-logo.png" alt="Meuglé" />
+    </header>
+    <main>
+        <a href="/dashboard">Home</a>
+        <h2>Verb List</h2>
+        <a href="/verbs/add">Add a Verb</a>
+        <form method="post">
+            <button name="del" value="true">Delete</button>
+            <button name="edit" value="true">Edit</button>
+            {{checklist verbs}}
+        </form>
+    </main>
+    <aside id="verb-list">
+        <h2>List of Verbs</h2>
+        <a href="/verbs/manage">Manage Verbs</a>
+        <input type="search" placeholder="Search" />
+        <input type="search" placeholder="Search" oninput="search()" />
+        {{ulist verbs}}
+        <script src="/js/search.js"></script>
+    </aside>
+</body>
+
 </html>

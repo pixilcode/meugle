@@ -20,6 +20,11 @@ const favicon = require("serve-favicon");
 //      requirements
 // TODO !! Update user info when they get a verb
 //      wrong/right
+// TODO Show correct conjugations of conjugations user
+//      got wrong
+// TODO If verb isn't in verb database, get rid of it
+//      from every user's frequently missed
+// TODO Finish up CSS design
 
 // Run tests
 database.run_tests();
@@ -143,17 +148,25 @@ app.get("/dashboard", (req, res) => {
 
 app.get("/verbs/manage", (req, res) => {
     let file = new template_file.TemplateFile(get_public("manage-verbs.html"))
-        .checklist("verbs", verb_db.verb_list());
+        .checklist("verbs", verb_db.verb_list())
+        .list("verbs", verb_db.verb_list());
     res.send(file.toString());
 });
 
 app.get("/verbs/add", (req, res) => {
-    res.sendFile(get_public("add-verbs.html"));
+    let file = new template_file.TemplateFile(get_public("add-verbs.html"))
+        .list("verbs", verb_db.verb_list());
+    res.send(file.toString());
 });
 
 app.get("/verbs/study/:mode", (req, res) => {
     let mode = req.params.mode;
     let { verb, tense } = req.query;
+
+    if (verb_db.verb_list().length === 0) {
+        res.redirect("/verbs/add");
+        return;
+    }
 
     switch (mode) {
         case "all": {
@@ -166,7 +179,8 @@ app.get("/verbs/study/:mode", (req, res) => {
                 let file = new template_file.TemplateFile(get_public("study-verb.html"))
                     .variable("mode", mode)
                     .variable("verb", verb)
-                    .variable("tense", tense);
+                    .variable("tense", tense)
+                    .list("verbs", verb_db.verb_list());
                 res.send(file.toString());
                 break;
             }
@@ -236,6 +250,7 @@ app.post("/verbs/study/all", (req, res) => {
         .variable("vous-answer", answers.vous)
         .variable("ils-correct", is_correct(correct.ils))
         .variable("ils-answer", answers.ils)
+        .list("verbs", verb_db.verb_list());
 
     res.send(file.toString());
 });

@@ -4,19 +4,26 @@
         <title>Register | Meuglé</title>
 		<meta charset="UTF-8">
         <link rel="stylesheet" type="text/css" href="/css/reset.css"></link>
+        <link rel="stylesheet" type="text/css" href="/css/style.css"></link>
+        <link rel="stylesheet" type="text/css" href="/css/login.css"></link>
         <script src="js/login.js"></script>
     </head>
     <body>
-        <p id="login-title">Register</p>
-        <form id="login-form">
-            <label for="username">Username:</label>
-            <input type="text" name="username" autocomplete="username" />
-            <label for="password">Password:</label>
-            <input type="password" name="password" />
-            <button type="button" onclick="validate('register', 'Username is taken')">
-                Register
-            </button>
-        </form>
-        <p id="error" style="display: none"></p>
+    	<main>
+		    <h1 id="title">Register</h1>
+		    <form id="login-form">
+		        <label for="username">Username:</label>
+		        <input type="text" name="username" autocomplete="username" />
+		        <label for="password">Password:</label>
+		        <input type="password" name="password" />
+		        <button type="button" onclick="validate('register', 'Username is taken')">
+		            Register
+		        </button>
+		    </form>
+		    <footer>
+		    	<a href="/login">Login</a>
+		    	<p id="error" style="display: none"></p>
+		    </footer>
+        </main>
     </body>
 </html>

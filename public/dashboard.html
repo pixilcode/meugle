@@ -4,6 +4,8 @@
         <title>Dashboard | Meuglé</title>
 		<meta charset="UTF-8">
         <link rel="stylesheet" type="text/css" href="/css/reset.css"></link>
+        <link rel="stylesheet" type="text/css" href="/css/style.css"></link>
+        <link rel="stylesheet" type="text/css" href="/css/dashboard.css"></link>
     </head>
     <body>
         <header>
@@ -32,7 +34,9 @@
             <h2>List of Verbs</h2>
             <a href="/verbs/manage">Manage Verbs</a>
             <input type="search" placeholder="Search" />
-            {{ulist verbs}}
+            <input type="search" placeholder="Search" oninput="search()" />
+        {{ulist verbs}}
+        <script src="/js/search.js"></script>
         </aside>
     </body>
 </html>

@@ -1,0 +1,99 @@
+main {
+  display: grid;
+  grid-template-rows: auto auto 20rem;
+  justify-items: center;
+  align-content: center;
+  padding: 1em;
+}
+
+main h3 {
+  padding-bottom: 2rem;
+  font-family: 'Varela Round', sans-serif;
+}
+
+main form {
+  display: grid;
+  grid-template:
+    'je-lbl je-in nous-lbl nous-in'
+    'tu-lbl tu-in vous-lbl vous-in'
+    'il-lbl il-in ils-lbl  ils-in '
+    'check  check check    check  ';
+  grid-gap: 1rem;
+  align-content: space-evenly;
+  justify-content: space-evenly;
+  padding: 1rem;
+  
+  background-color: #ee2244;
+  border-radius: 1em;
+  box-shadow: -.25rem -0.25rem .25rem rgba(0, 0, 0, 0.25);
+}
+
+main form label {
+  align-self: center;
+}
+
+main form input[type="submit"] {
+  grid-area: check;
+  justify-self: center;
+}
+
+input.correct {
+  background-color: #aaffaa;
+  border-color: #55dd55;
+}
+
+input.incorrect {
+  background-color: #ffcccc;
+}
+
+input[disabled] {
+  color: #000000;
+}
+
+label[for="je"] {
+  grid-area: je-lbl;
+}
+
+input#je {
+  grid-area: je-in;
+}
+
+label[for="tu"] {
+  grid-area: tu-lbl;
+}
+
+input#tu {
+  grid-area: tu-in;
+}
+
+label[for="il"] {
+  grid-area: il-lbl;
+}
+
+input#il {
+  grid-area: il-in;
+}
+
+label[for="nous"] {
+  grid-area: nous-lbl;
+}
+
+input#nous {
+  grid-area: nous-in;
+}
+
+label[for="vous"] {
+  grid-area: vous-lbl;
+}
+
+input#vous {
+  grid-area: vous-in;
+}
+
+label[for="ils"] {
+  grid-area: ils-lbl;
+}
+
+input#ils {
+  grid-area: ils-in;
+}

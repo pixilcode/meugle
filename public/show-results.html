@@ -1,43 +1,57 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>&laquo;{{verb}}&raquo; | Meuglé</title>
-		<meta charset="UTF-8">
-        <link rel="stylesheet" type="text/css" href="/css/reset.css"></link>
-    </head>
-    <body>
-        <header>
-            <img src="/res/long-logo.png" alt="Meuglé" />
-        </header>
-        <main>
-            <h2>{{verb}}</h2>
-            <h3>{{tense}}</h3>
-            <form method="POST">
-                <fieldset disabled>
-                    <label for="je">Je:</label>
-                    <input type="text" name="je" id="je" class="{{je-correct}}" value="{{je-answer}}" />
 
-                    <label for="tu">Tu:</label>
-                    <input type="text" name="tu" id="tu" class="{{tu-correct}}" value="{{tu-answer}}"/>
+<head>
+    <title>&laquo;{{verb}}&raquo; | Meuglé</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="/css/reset.css">
+    </link>
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+    </link>
+    <link rel="stylesheet" type="text/css" href="/css/study.css">
+    </link>
+</head>
 
-                    <label for="il">Il:</label>
-                    <input type="text" name="il" id="il" class="{{il-correct}}" value="{{il-answer}}"/>
+<body>
+    <header>
+        <img src="/res/long-logo.png" alt="Meuglé" />
+    </header>
+    <main>
+        <h2>{{verb}}</h2>
+        <h3>{{tense}}</h3>
+        <form>
+            <label for="je">Je:</label>
+            <input disabled type="text" name="je" id="je" class="{{je-correct}}" value="{{je-answer}}" />
 
-                    <label for="nous">Nous:</label>
-                    <input type="text" name="nous" id="nous" class="{{nous-correct}}" value="{{nous-answer}}"/>
+            <label for="tu">Tu:</label>
+            <input disabled type="text" name="tu" id="tu" class="{{tu-correct}}" value="{{tu-answer}}" />
 
-                    <label for="vous">Vous:</label>
-                    <input type="text" name="vous" id="vous" class="{{vous-correct}}" value="{{vous-answer}}"/>
+            <label for="il">Il:</label>
+            <input disabled type="text" name="il" id="il" class="{{il-correct}}" value="{{il-answer}}" />
 
-                    <label for="ils">Ils:</label>
-                    <input type="text" name="ils" id="ils" class="{{ils-correct}}" value="{{ils-answer}}"/>
-                </fieldset>
-            </form>
-            <a href="/dashboard">Home</a>
-            <a id="next" href="/verbs/study/{{mode}}">Next</a>
-            <script>
-                document.getElementById("next").focus();
-            </script>
-        </main>
-    </body>
+            <label for="nous">Nous:</label>
+            <input disabled type="text" name="nous" id="nous" class="{{nous-correct}}" value="{{nous-answer}}" />
+
+            <label for="vous">Vous:</label>
+            <input disabled type="text" name="vous" id="vous" class="{{vous-correct}}" value="{{vous-answer}}" />
+
+            <label for="ils">Ils:</label>
+            <input disabled type="text" name="ils" id="ils" class="{{ils-correct}}" value="{{ils-answer}}" />
+        </form>
+        <a href="/dashboard">Home</a>
+        <a id="next" href="/verbs/study/{{mode}}">Next</a>
+        <script>
+            document.getElementById("next").focus();
+        </script>
+    </main>
+    <aside id="verb-list">
+        <h2>List of Verbs</h2>
+        <a href="/verbs/manage">Manage Verbs</a>
+        <input type="search" placeholder="Search" />
+        <input type="search" placeholder="Search" oninput="search()" />
+        {{ulist verbs}}
+        <script src="/js/search.js"></script>
+    </aside>
+</body>
+
 </html>
