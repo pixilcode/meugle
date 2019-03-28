@@ -10,7 +10,7 @@ main {
 main header {
   background: none;
   background-color: #eec233;
-  background-image: linear-gradient(to left, #eeb01b, #eec233 1em);
+  background-image: linear-gradient(to left, #eeb01b, #eec233 1.5em);
   
   padding: 1rem 1rem;
   grid-area: header;
@@ -73,8 +73,8 @@ section#options {
 section#frequently-missed {
   grid-area: freq;
   padding: 1.5rem;
-  background-color: #dd2244;
-  background-image: linear-gradient(to left, #d51a3c, #dd2244 1rem);
+  background-color: #e7a722;
+  background-image: linear-gradient(to left, #d79711, #e7a722 1.5em);
   
   display: grid;
   grid-template-rows: auto 1fr;

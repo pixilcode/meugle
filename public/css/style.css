@@ -6,9 +6,9 @@ body {
   height: 100%;
   background-color: #f7f74e;
   display: grid;
-  grid-template: "header header" auto
+  grid-template: "header aside" auto
                  "main   aside " 1fr
-                / 1fr    auto;
+                / 1fr    20em;
 }
 
 label {
@@ -61,8 +61,12 @@ header {
 
 aside {
   padding: 1em;
-  background-color: #ee5566;
-  background-image: linear-gradient(to right, #df4b5b, #ee5566 1em)
+  background-color: #dd2244;
+  grid-area: aside;
+}
+
+main {
+  grid-area: main;
 }
 
 h1, h2, h3 {
