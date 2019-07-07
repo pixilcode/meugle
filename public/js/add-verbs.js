@@ -22,6 +22,7 @@ function new_tense() {
     fieldset.append(...tense, ...je, ...tu, ...il, ...nous, ...vous, ...ils);
 
     form.append(fieldset);
+    tense[1].focus();
 }
 
 function generate_input_box(label, name) {
